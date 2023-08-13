@@ -8,31 +8,22 @@
     "dist"
   ],
   "repository": "",
-  "keywords": [
-  ],
+  "keywords": [],
   "module": "dist/sdk.esm.js",
   "scripts": {
-    "lint": "tsdx lint src",
-    "lint:fix": "yarn lint --fix",
-    "build": "tsdx build",
-    "start": "tsdx watch",
-    "test": "vitest --config ./vitest.config.ts",
-    "prepublishOnly": "tsdx build"
-  },
-  "lint-staged": {
-    "src/**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix"
-    ]
+    "build": "tsc ."
   },
   "dependencies": {
     "@traderjoe-xyz/sdk": "^4.0.7",
     "@traderjoe-xyz/sdk-v2": "^2.0.10",
+    "axios": "^1.4.0",
     "body-parser": "^1.20.2",
     "dotenv": "^16.3.1",
     "ethers": "^6.6.7",
     "express": "^4.18.2",
     "jsbi": "^4.3.0",
     "lodash.flatmap": "^4.5.0",
+    "socks-proxy-agent": "^8.0.1",
     "starknet": "^5.14.1",
     "toformat": "^2.0.0",
     "web3": "^4.0.3"
@@ -49,12 +40,9 @@
     "lint-staged": "^13.0.0",
     "node-fetch": "^3.3.1",
     "tsdx": "^0.14.1",
+    "typescript": "5.1.6",
     "viem": "^0.3.35",
-    "vitest": "^0.31.0",
-    "tsdx/typescript": "^4.9.4",
-    "tsdx/@typescript-eslint/eslint-plugin": "^5.49.0",
-    "tsdx/@typescript-eslint/parser": "^5.49.0",
-    "tsdx/eslint": "^7.1.0"
+    "vitest": "^0.31.0"
   },
   "engines": {
     "node": ">=10"

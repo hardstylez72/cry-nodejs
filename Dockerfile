@@ -8,9 +8,7 @@ COPY package.json .
 COPY dist build
 COPY .babelrc .
 COPY .yarnrc .
-COPY tsconfig.json .
 COPY yarn.lock .
-
-RUN yarn install --production=true
+COPY node_modules node_modules
 
 CMD [ "node", "/opt/app/build/src/index.js" ]
