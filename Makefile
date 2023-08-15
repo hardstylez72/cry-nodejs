@@ -10,6 +10,3 @@ build:
 	cp package.json build/package.json
 	cp -R dist build/dist
 	yarn --cwd ./build install --production
-
-pub:
-	sh build/deploy.sh

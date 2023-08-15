@@ -6,9 +6,6 @@ WORKDIR ${APPDIR}
 
 COPY package.json .
 COPY dist build
-COPY .babelrc .
-COPY .yarnrc .
-COPY yarn.lock .
 COPY node_modules node_modules
 
 CMD [ "node", "/opt/app/build/src/index.js" ]
