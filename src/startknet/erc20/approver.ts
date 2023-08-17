@@ -1,4 +1,4 @@
-import {Account, CallData, TransactionStatus, hash, num, uint256, Contract,} from "starknet";
+import {CallData, Contract, uint256,} from "starknet";
 import {tokenMap, TokenName} from "../tokens";
 import {StarkNetAccount} from "../account/Account";
 import Big from "big.js";
@@ -37,8 +37,12 @@ export class Approver {
 
         const allowed = await this.allowance({token: req.token, spender: req.spender, addr: this.account.pub})
 
+        console.log('allowed: ' + allowed.toString())
+        console.log('want: ' + req.amount)
         if (allowed.lt(new Big(req.amount))) {
-            const res = await this.approve(req).catch((err => {throw new Error(`approve on ${req.token} failed: ${err.message}`)}))
+            return this.approve(req).catch((err => {
+                throw new Error(`approve on ${req.token} failed: ${err.message}`)
+            }))
         }
         return {}
     }
@@ -59,9 +63,6 @@ export class Approver {
             })}
         const estimate = await this.account.acc.estimateFee(calls, {blockIdentifier: 'latest'})
         const res = await this.account.acc.execute(calls, [abi], { maxFee: estimate.suggestedMaxFee,})
-
-        console.log('approve: ' + res.transaction_hash)
-        await this.account.provider.waitForTransaction(res.transaction_hash, {retryInterval: 1000, successStates:[TransactionStatus.ACCEPTED_ON_L2, TransactionStatus.ACCEPTED_ON_L1]})
 
         return {txId: res.transaction_hash}
     }

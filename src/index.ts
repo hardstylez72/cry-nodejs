@@ -3,10 +3,9 @@ import * as dotenv from 'dotenv';
 import bodyParser from 'body-parser'
 import { estimateSwapReq, getSwapData } from './joe'
 import {getUrgentPub, UrgentAccount} from './startknet/account/urgent'
-import {calculateAddressBraavos} from "./startknet/account/braavos";
-import {MainNet, StarkNetProvider} from "./startknet/provider";
+import { StarkNetProvider} from "./startknet/provider";
 import {Approver} from "./startknet/erc20/approver";
-import {Swapper10k} from "./startknet/10swap/swap";
+import {Swapper} from "./startknet/swap/swapper";
 
 
 dotenv.config();
@@ -18,8 +17,38 @@ app.use(bodyParser.urlencoded({
   extended: true
 }));
 
-app.post('/starknet/10k_swap', async (req: Request, res: Response) => {
-  console.log('/starknet/10k_swap')
+app.post('/starknet/approve', async (req: Request, res: Response) => {
+  console.log('/starknet/approve')
+  try {
+
+    const Req = {
+      proxy: req.body.proxy,
+      rpc: req.body.chainRPC,
+      privateKey: req.body.privateKey,
+      spender: req.body.spender,
+      amount: req.body.amount,
+      token: req.body.token,
+    }
+
+    const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
+    const account = new UrgentAccount(provider, Req.privateKey)
+    const swap = new Approver(account)
+    const data = await swap.Approve({
+      token: Req.token,
+      amount: Req.amount,
+      spender: Req.spender,
+    })
+
+    res.statusCode = 200
+    res.send(JSON.stringify(data))
+  } catch (err: any) {
+    console.error(err)
+    res.statusCode = 500
+    res.send(JSON.stringify({error: JSON.stringify(err.message)}))
+  }
+})
+app.post('/starknet/swap', async (req: Request, res: Response) => {
+  console.log('/starknet/swap')
   try {
 
     const Req = {
@@ -30,19 +59,22 @@ app.post('/starknet/10k_swap', async (req: Request, res: Response) => {
       toToken: req.body.toToken,
       amount: req.body.amount,
       estimateOnly: req.body.estimateOnly,
-      fee: req.body.fee
+      fee: req.body.fee,
+      slippage: req.body.slippage,
+      platform: req.body.platform
     }
 
     const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
     const account = new UrgentAccount(provider, Req.privateKey)
-    const swap = new Swapper10k(account)
-    const data = await swap.Swap({
+    const swap = new Swapper(account)
+    const data = await swap.swap({
       amount: Req.amount,
       fee: Req.fee,
       fromToken: Req.fromToken,
       toToken: Req.toToken,
-      estimateOnly: Req.estimateOnly
-    })
+      estimateOnly: Req.estimateOnly,
+      slippage: Req.slippage
+    }, Req.platform)
 
     res.statusCode = 200
     res.send(JSON.stringify( data))
