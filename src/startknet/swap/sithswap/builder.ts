@@ -40,9 +40,6 @@ export class BuilderSith implements SwapBuilder{
         return {v:BigInt(result.low), stable: res.stable}
     }
 
-    abi(): Abi {
-        return abi
-    }
      async buildCallData(req: SwapRequest): Promise<Call> {
 
          const path = this.makePath(req)

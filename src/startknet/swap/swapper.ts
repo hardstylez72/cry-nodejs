@@ -4,6 +4,8 @@ import {Builder10kSwap} from "./10swap/builder";
 import {BuilderSith} from "./sithswap/builder";
 import {Abi} from "starknet";
 import {BuilderJediSwap} from "./jediswap/builder";
+import {BuilderMySwap} from "./mySwap/builder";
+import {BuilderProtossSwap} from "./protossSwap/builder";
 
 
 export enum Platform {
@@ -11,11 +13,14 @@ export enum Platform {
     SithSwap = 'SithSwap',
 
     JediSwap = 'JediSwap',
+
+    MySwap = 'MySwap',
+
+    ProtossSwap = 'ProtossSwap'
 }
 
 export interface SwapBuilder {
     buildCallData(req: SwapRequest)
-    abi(): Abi
 }
 
 export class Swapper {
@@ -28,7 +33,9 @@ export class Swapper {
         this.platforms  = new Map<Platform, SwapBuilder>([
                [Platform.Swap10k, new Builder10kSwap(acc)],
                [Platform.SithSwap, new BuilderSith(acc)],
-               [Platform.JediSwap, new BuilderJediSwap(acc)]
+               [Platform.JediSwap, new BuilderJediSwap(acc)],
+               [Platform.MySwap, new BuilderMySwap(acc)],
+               [Platform.ProtossSwap, new BuilderProtossSwap(acc)]
            ])
     }
 

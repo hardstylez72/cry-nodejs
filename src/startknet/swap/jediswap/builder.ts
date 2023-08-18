@@ -37,9 +37,6 @@ export class BuilderJediSwap implements SwapBuilder {
         return [from, to]
     }
 
-    abi(): Abi {
-        return routerAbi
-    }
     private async getAmountOut(req: SwapRequest): Promise<BigNumberish> {
 
         let reverse = false

@@ -36,9 +36,6 @@ export class Builder10kSwap implements SwapBuilder {
         return [from, to]
     }
 
-    abi(): Abi {
-        return abi
-    }
     private async getAmountOut(req: SwapRequest): Promise<BigNumberish> {
         const path = this.makePath(req)
         const res = await this.contract.getAmountsOut(uint256.bnToUint256(req.amount), path)
