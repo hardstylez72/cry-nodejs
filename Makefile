@@ -9,4 +9,6 @@ build:
 	cp yarn.lock build/yarn.lock
 	cp package.json build/package.json
 	cp -R dist build/dist
+	rm build/dist/src/test.js
+	rm build/dist/src/test.js.map
 	yarn --cwd ./build install --production

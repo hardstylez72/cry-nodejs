@@ -17,13 +17,89 @@ import {
   ec,
   hash,
   num,
-  stark,
+  stark, SequencerProvider, Account, TransactionType,
 } from 'starknet';
+import {DefaultRes, StarkNetAccount} from "./Account";
 
 const BraavosProxyClassHash: BigNumberish =
   '0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e';
 const BraavosInitialClassHash = '0x5aa23d5bb71ddaa783da7ea79d405315bafa7cf0387a74f4593578c3e9e6570';
 const BraavosAccountClassHash = '0x2c2b8f559e1221468140ad7b2352b1a5be32660d0bf1a3ae3a054a4ec5254e4'; // will probably change over time
+
+
+
+export class BraavosAccount implements StarkNetAccount {
+
+
+  provider: SequencerProvider
+  acc: Account
+  pk: string
+  pub: string
+  constructor(provider: SequencerProvider, pk: string) {
+    this.provider = provider
+    this.pk = pk
+    this.pub = this.GetPubKey()
+    this.acc = new Account(this.provider, this.pub, this.pk);
+  }
+
+  async IsAccountDeployed(): Promise<boolean> {
+
+    try {
+      const nonce = await this.acc.getNonce()
+
+      return nonce !== "0x0"
+    } catch (e) {
+      console.log(e)
+      return false
+    }
+  }
+
+  async DeployAccount(): Promise<DefaultRes> {
+    return this.deployAccount( false)
+  }
+  async DeployAccountEstimate() {
+    return this.deployAccount(true)
+  }
+  private async deployAccount(estimateOnly: boolean): Promise<DefaultRes> {
+    const address =  this.pub
+
+    const fee = await estimateBraavosAccountDeployFee(this.pk, this.acc)
+    if (estimateOnly) {
+      return {EstimatedMaxFee: fee.toString()}
+    }
+
+    const res = await deployBraavosAccount(this.pk, this.acc, fee)
+
+    return {
+      EstimatedMaxFee: fee.toString(),
+      ContractAddr: address,
+      TxHash: res.transaction_hash
+    }
+  }
+
+  GetPubKey(): string {
+    return getBraavosPub(this.pk)
+  }
+}
+
+export const getBraavosPub = (pk: string): string => {
+  const publicKey = ec.starkCurve.getStarkKey(pk)
+
+  const ProxyConstructorCallData = CallData.compile({
+    implementation_address: BraavosInitialClassHash,
+    initializer_selector: hash.getSelectorFromName('initializer'),
+    calldata: [...CallData.compile({ public_key: publicKey })],
+  });
+
+  return hash.calculateContractAddressFromHash(
+      publicKey,
+      BraavosProxyClassHash,
+      ProxyConstructorCallData,
+      0
+  );
+}
+
+// ниже просто скопировал с офф репы:))
 
 export function getBraavosSignature(
   BraavosProxyAddress: BigNumberish,
@@ -57,7 +133,7 @@ export function getBraavosSignature(
     BraavosAccountClassHash.toString(),
     ...parsedOtherSigner.map((e) => e.toString()),
   ];
-  console.log('signature =', signature);
+
   return signature;
 }
 
@@ -195,3 +271,5 @@ export async function deployBraavosAccount(
     }
   );
 }
+
+

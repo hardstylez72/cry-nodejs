@@ -3,6 +3,11 @@ import {StarkNetProvider} from "../provider";
 
 export interface DefaultRes {
     EstimatedMaxFee: string
+    Gas?: {
+        limit: string,
+        price: string,
+        total: string
+    }
     ContractAddr?: string
     TxHash?: string
 }

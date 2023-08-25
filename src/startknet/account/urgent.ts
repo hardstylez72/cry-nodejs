@@ -1,20 +1,12 @@
 import {
-  Account, buildUrl,
+  Account,
   CallData,
-  constants,
   ec,
   hash,
-  Provider,
-  RpcProvider,
-  SequencerHttpMethod,
   SequencerProvider,
   TransactionType
 } from "starknet";
-import {SocksProxyAgent, SocksProxyAgentOptions} from 'socks-proxy-agent';
-import axios, {AxiosInstance, CreateAxiosDefaults} from 'axios';
-import {calculateAddressBraavos} from "./braavos";
 import {DefaultRes, StarkNetAccount} from "./Account";
-import {StarkNetProvider} from "../provider";
 
 const  argentProxyClassHash = "0x25ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918";
 const  accountClassHash = "0x033434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2";
@@ -55,12 +47,12 @@ export class UrgentAccount implements StarkNetAccount {
   private async deployAccount(estimateOnly: boolean): Promise<DefaultRes> {
     const address =  this.pub
     const account = new Account(this.provider, this.pub, this.pk);
-    const publicKey = this.getPub(this.pk)
+    const salt = this.getSalt(this.pk)
 
     const cd = CallData.compile({
       implementation: accountClassHash,
       selector: hash.getSelectorFromName("initialize"),
-      calldata: CallData.compile({signer: publicKey, guardian: "0"}),
+      calldata: CallData.compile({signer: salt, guardian: "0"}),
     })
 
     const fee = await account.getSuggestedMaxFee({
@@ -68,7 +60,7 @@ export class UrgentAccount implements StarkNetAccount {
       payload: {
         classHash: argentProxyClassHash,
         constructorCalldata: cd,
-        addressSalt: publicKey,
+        addressSalt: salt,
         contractAddress: address,
       }
     }, {})
@@ -81,7 +73,7 @@ export class UrgentAccount implements StarkNetAccount {
       classHash: argentProxyClassHash,
       constructorCalldata: cd,
       contractAddress: address,
-      addressSalt: publicKey
+      addressSalt: salt
     };
 
     const res = await account.deployAccount(data)
@@ -93,7 +85,7 @@ export class UrgentAccount implements StarkNetAccount {
     }
   }
 
-  private getPub(privateKey: string) {
+  private getSalt(privateKey: string) {
    return ec.starkCurve.getStarkKey(privateKey);
   }
   GetPubKey(): string {

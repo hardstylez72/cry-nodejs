@@ -10,7 +10,11 @@ export class StarkNetProvider {
     protected httpClient: AxiosInstance
     constructor(rpc: string, proxy?: string) {
 
-        this.provider =  new SequencerProvider({baseUrl: rpc ,});
+        this.provider =  new SequencerProvider({
+            baseUrl: rpc ,
+            feederGatewayUrl: 'feeder_gateway',
+            gatewayUrl: 'gateway',
+        });
         let options = {
             baseURL: rpc,
             timeout: 30000,

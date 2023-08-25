@@ -11,11 +11,8 @@ import {BuilderProtossSwap} from "./protossSwap/builder";
 export enum Platform {
     Swap10k= 'Swap10k',
     SithSwap = 'SithSwap',
-
     JediSwap = 'JediSwap',
-
     MySwap = 'MySwap',
-
     ProtossSwap = 'ProtossSwap'
 }
 
@@ -24,12 +21,10 @@ export interface SwapBuilder {
 }
 
 export class Swapper {
-
     platforms: Map<Platform, SwapBuilder>
     acc: StarkNetAccount
     constructor(acc: StarkNetAccount) {
         this.acc = acc
-
         this.platforms  = new Map<Platform, SwapBuilder>([
                [Platform.Swap10k, new Builder10kSwap(acc)],
                [Platform.SithSwap, new BuilderSith(acc)],
