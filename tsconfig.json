@@ -14,6 +14,7 @@
     "outDir": "dist",
     "baseUrl": "./",
     "declaration": false,
+    "experimentalDecorators": true,
     "rootDir": "./",
     "strict": true,
     "noImplicitAny": false,

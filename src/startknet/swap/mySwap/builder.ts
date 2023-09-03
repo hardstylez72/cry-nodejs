@@ -2,11 +2,12 @@ import {Builder10kSwap} from "../10swap/builder";
 import {SwapBuilder} from "../swapper";
 import {StarkNetAccount} from "../../account/Account";
 import {Abi, BigNumberish, Call, Contract, num, uint256} from "starknet";
-import {defaultDeadline, SwapRequest} from "../../halp";
+import {defaultDeadline, retryOpt, SwapRequest} from "../../halp";
 import {Address, tokenMap, TokenName} from "../../tokens";
 import {useSlippage} from "../slippage";
 import {routerAbi} from './routerAbi'
 import {Big} from 'big.js'
+import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
 
 export class BuilderMySwap implements SwapBuilder {
 
@@ -94,7 +95,7 @@ export class BuilderMySwap implements SwapBuilder {
         const path = this.makePath(req)
         const pool = this.getPoolId(req.fromToken, req.toToken)
 
-        const amountMin = await this.getAmountOut(req, pool.id, pool.reverse)
+        const amountMin = await retryAsyncDecorator(this.getAmountOut.bind(this), retryOpt)(req, pool.id, pool.reverse)
             .catch((err) => {throw new Error(`router.getAmountOut failed ${err.message}`)})
 
         const min = useSlippage(amountMin.toString(), req.slippage)

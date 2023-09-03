@@ -3,8 +3,9 @@ import {StarkNetAccount} from "../../account/Account";
 import {Address, tokenMap,} from "../../tokens";
 import {abi} from "./abi";
 import {useSlippage} from "../slippage";
-import {defaultDeadline, SwapRequest} from "../../halp";
+import {defaultDeadline, retryOpt, SwapRequest} from "../../halp";
 import {SwapBuilder} from "../swapper";
+import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
 
 
 
@@ -44,7 +45,7 @@ export class BuilderSith implements SwapBuilder{
 
          const path = this.makePath(req)
 
-        const amountMin = await this.getAmountOut(req)
+        const amountMin = await retryAsyncDecorator(this.getAmountOut.bind(this), retryOpt)(req)
             .catch((err) => {throw new Error(`router.getAmountOut failed ${err.message}`)})
 
         const min = useSlippage(amountMin.v.toString(), req.slippage)

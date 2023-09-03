@@ -14,6 +14,9 @@ import {HDNodeWallet, Mnemonic} from "ethers";
 import {BridgeDirection, liquidityBridge} from "./bridge/liquidityBridge";
 import {EthProvider} from "./eth/provider";
 import {EthAccount} from "./eth/account";
+import {Dmail} from "./dmail/service";
+import {StarkNetId} from "./mint/starknetid";
+import {Transfer} from "./transfer/service";
 
 
 enum AccountType {
@@ -264,6 +267,113 @@ export const registerStarkNetEndpoints = (app: Express) => {
             res.send(JSON.stringify({error: JSON.stringify(err.message)}))
         }
     })
+    app.post('/starknet/dmail', async (req: Request, res: Response) => {
+        console.log('/starknet/dmail')
+        try {
+
+            const Req = {
+                proxy: req.body.proxy,
+                pk: req.body.privateKey,
+                account: req.body.account,
+                estimateOnly: req.body.estimateOnly,
+                rpc: req.body.chainRPC,
+            }
+
+            const {provider} = new StarkNetProvider(MainNet,  Req.proxy)
+
+            const account = resolveAccount(Req.account, Req.pk, provider)
+
+            const dmail = new Dmail(account)
+
+            const data = await dmail.sendDmail({
+                estimateOnly: Req.estimateOnly,
+            })
+
+            res.statusCode = 200
+            res.send(JSON.stringify(data))
+        } catch (err: any) {
+            console.error(err)
+            res.statusCode = 500
+            res.send(JSON.stringify({error: JSON.stringify(err.message)}))
+        }
+    })
+    app.post('/starknet/mint', async (req: Request, res: Response) => {
+        console.log('/starknet/mint')
+        try {
+
+            const Req = {
+                proxy: req.body.proxy,
+                pk: req.body.privateKey,
+                account: req.body.account,
+                estimateOnly: req.body.estimateOnly,
+                rpc: req.body.chainRPC,
+            }
+
+            const {provider} = new StarkNetProvider(MainNet,  Req.proxy)
+
+            const account = resolveAccount(Req.account, Req.pk, provider)
+
+            const dmail = new StarkNetId(account)
+
+            const data = await dmail.mint({
+                estimateOnly: Req.estimateOnly,
+            })
+
+            res.statusCode = 200
+            res.send(JSON.stringify(data))
+        } catch (err: any) {
+            console.error(err)
+            res.statusCode = 500
+            res.send(JSON.stringify({error: JSON.stringify(err.message)}))
+        }
+    })
+    app.post('/starknet/transfer', async (req: Request, res: Response) => {
+        console.log('/starknet/transfer')
+        try {
+
+            const b = getBase(req)
+
+            const Req = {
+                toAddr: req.body.toAddr,
+                token:  req.body.token,
+                amount: req.body.amount,
+                ...b
+            }
+
+            const {provider} = new StarkNetProvider(MainNet,  b.proxy)
+            const account = resolveAccount(b.account, b.pk, provider)
+
+            const client = new Transfer(account)
+            const data = await client.transfer(Req)
+
+            res.statusCode = 200
+            res.send(JSON.stringify(data))
+        } catch (err: any) {
+            console.error(err)
+            res.statusCode = 500
+            res.send(JSON.stringify({error: JSON.stringify(err.message)}))
+        }
+    })
+}
+
+const getBase = (req: Request): Base => {
+    return {
+        proxy: req.body.proxy, //+
+        pk: req.body.privateKey, //+
+        account: req.body.account, //+
+        estimateOnly: req.body.estimateOnly, //+
+        rpc: req.body.chainRPC,//+
+        maxFee: req.body.maxFee, //+
+    }
+}
+
+type Base = {
+    proxy?: string
+    pk: string
+    account:AccountType
+    estimateOnly: boolean
+    rpc: string
+    maxFee?: string
 }
 
 export const genMnemonic = (): string =>{

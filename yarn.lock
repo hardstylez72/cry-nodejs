@@ -4944,6 +4944,11 @@ istanbul-reports@^3.0.2:
     html-escaper "^2.0.0"
     istanbul-lib-report "^3.0.0"
 
+jabber@^1.5.3:
+  version "1.5.3"
+  resolved "https://registry.yarnpkg.com/jabber/-/jabber-1.5.3.tgz#ca45c4d7e7607932d60f491f2883c5de783a3bf3"
+  integrity sha512-4g5zZ9kF10oWNZzeKJqwh9yFHsee7CMWe3pXRJTdibvaMPNFWAJlLf1dno4Osxw/t9+fk0bEbEOJcscHziGX+w==
+
 jest-changed-files@^25.5.0:
   version "25.5.0"
   resolved "https://registry.yarnpkg.com/jest-changed-files/-/jest-changed-files-25.5.0.tgz#141cc23567ceb3f534526f8614ba39421383634c"
@@ -6518,6 +6523,11 @@ punycode@^2.1.0, punycode@^2.1.1:
   resolved "https://registry.yarnpkg.com/punycode/-/punycode-2.3.0.tgz#f67fa67c94da8f4d0cfff981aee4118064199b8f"
   integrity sha512-rRV+zQD8tVFys26lAGR9WUuS4iUAngJScM+ZRSKtvl5tKeZ2t5bvdNFdNHBW9FWR4guGHlgmsZ1G7BSm2wTbuA==
 
+pure-rand@^6.0.2:
+  version "6.0.2"
+  resolved "https://registry.yarnpkg.com/pure-rand/-/pure-rand-6.0.2.tgz#a9c2ddcae9b68d736a8163036f088a2781c8b306"
+  integrity sha512-6Yg0ekpKICSjPswYOuC5sku/TSWaRYlA0qsXqJgM/d/4pLPHPuTxK7Nbf7jFKzAeedUhR8C7K9Uv63FBsSo8xQ==
+
 qs@6.11.0:
   version "6.11.0"
   resolved "https://registry.yarnpkg.com/qs/-/qs-6.11.0.tgz#fd0d963446f7a65e1367e01abd85429453f0c37a"
@@ -7753,6 +7763,11 @@ ts-jest@^25.3.1:
     mkdirp "0.x"
     semver "6.x"
     yargs-parser "18.x"
+
+ts-retry@^4.2.1:
+  version "4.2.1"
+  resolved "https://registry.yarnpkg.com/ts-retry/-/ts-retry-4.2.1.tgz#60f3ebfa756bb4912c31fe19f45ea5309c7edb18"
+  integrity sha512-Q6vaHQZL6pEHYts75M6GvC6eSnnZwGOxLIz9Lva/22JvvcOdy7/pSmwhr/fOdz7zHoNDMKoq4mCJ+E+DSFtG/Q==
 
 tsconfig-paths@^3.14.2:
   version "3.14.2"

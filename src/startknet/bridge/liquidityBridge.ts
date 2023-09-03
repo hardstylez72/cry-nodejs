@@ -1,11 +1,14 @@
 import {DefaultRes, StarkNetAccount} from "../account/Account";
-import {ethers, Contract, solidityPacked} from "ethers";
+import {ethers, Contract, solidityPacked, Block} from "ethers";
 import {EthAccount, TxReq} from "../eth/account";
 import {ethBridgeAbi} from "./eth.abi";
-import {encodeFunctionData, hexToBigInt} from "viem";
-import Big from "big.js";
-import {EstimateFeeResponse} from "starknet";
+import {hexToBigInt} from "viem";
+import Big, {RoundingMode} from "big.js";
+import {retryDecorator} from "ts-retry/lib/cjs/retry/utils";
+import {retryOpt} from "../halp";
 
+const priorityFee = BigInt(1e8)
+const epsilon = BigInt(5e7)
 
 export  enum BridgeDirection {
     fromEth = 'fromEth',
@@ -57,6 +60,7 @@ const ethBridgeAddress = '0xae0ee0a63a2ce6baeeffe56e7714fb4efe48d419'
 export const liquidityBridge = async (req: LiquidityBridgeReq): Promise<DefaultRes> => {
 
     let balance = await req.accEth.getNativeBalance()
+    let amount = new Big(balance)
 
     if (req.debug) {
         console.log(`balance: ${balance.div(10e17).toString()} ETH`)
@@ -70,7 +74,7 @@ export const liquidityBridge = async (req: LiquidityBridgeReq): Promise<DefaultR
         if (req.debug) {
             console.log(`percent of balance to swap: ${percent}`)
         }
-        balance = balance.div(100).mul(percent)
+        amount = amount.div(100).mul(percent)
         if (req.debug) {
             console.log(`amount to swap: ${balance.div(10e17).toString()} ETH`)
         }
@@ -81,25 +85,38 @@ export const liquidityBridge = async (req: LiquidityBridgeReq): Promise<DefaultR
     }
 
     if (req.direction === BridgeDirection.fromEth) {
-        return bridgeFromEth(req, balance)
+        return bridgeFromEth(req, balance, amount)
     } else {
         return bridgeToEth(req)
     }
 }
 
-const bridgeFromEth = async (req: LiquidityBridgeReq, balance: Big): Promise<DefaultRes> => {
 
-    const gasL1 = await estimateL1Gas(req.accStark, req.accEth, balance)
-    console.log(`L1 gas: ${gasL1.total.div(1e18).toString()} ETH` )
-    const value  = balance.sub(gasL1.total)
 
-    const gasL2 = await estimateL2Gas(value, req.accStark)
-    console.log(`L2 gas: ${gasL2.total.div(1e18).toString()} ETH` )
-    const amount = value.sub(gasL2.total)
+
+const bridgeFromEth = async (req: LiquidityBridgeReq, balance: Big, amount:Big): Promise<DefaultRes> => {
+
+    const tmpAmount = amount.div(10).round()
+
+    const gasL1 = await retryDecorator(estimateL1Gas, retryOpt)(req.accStark, req.accEth, tmpAmount, req.debug)
+        .catch(err => {
+            throw new Error(`bridgeFromEth.estimateL1Gas failed: ${err.message}`)
+        })
+    if (req.debug) {
+        console.log(`L1 gas: ${gasL1.total.div(1e18).toString()} ETH` )
+    }
+
+    const gasL2 = await retryDecorator(estimateL2Gas,retryOpt)(tmpAmount, req.accStark)
+        .catch(err => {
+            throw new Error(`bridgeFromEth.estimateL2Gas failed: ${err.message}`)
+        })
+    if (req.debug) {
+        console.log(`L2 gas: ${gasL2.total.div(1e18).toString()} ETH`)
+    }
 
 
     const result:DefaultRes = {
-        ContractAddr:ethBridgeAddress,
+        ContractAddr: ethBridgeAddress,
         EstimatedMaxFee: gasL1.total.add(gasL2.total).toString(),
         Gas: {
             price: gasL1.price.add(gasL2.price).toString(),
@@ -112,7 +129,13 @@ const bridgeFromEth = async (req: LiquidityBridgeReq, balance: Big): Promise<Def
         return result
     }
 
-    result.TxHash =  await sendBridgeFromEthTransaction(amount, value, req.accEth, req.accStark, gasL1, req.debug)
+    const want = amount.add(gasL1.total).add(gasL2.total).round()
+    if (want.gt(balance)) {
+        amount = balance.sub(gasL1.total).sub(gasL2.total).sub(epsilon.toString())
+    }
+    const value = amount.add(gasL2.total).round(undefined, RoundingMode.RoundDown)
+
+    result.TxHash =  await sendBridgeFromEthTransaction(amount, balance,value, req.accEth, req.accStark, gasL1, req.debug)
 
     if (req.debug) {
         console.log(`tx: https://etherscan.io/tx/${result.TxHash}`)
@@ -135,21 +158,22 @@ const toString = (b: Big) :string => {
     return b.round().toString()
 }
 
-const sendBridgeFromEthTransaction = async (amount: Big, value: Big,  accEth: EthAccount, accStark: StarkNetAccount, gas: Gas, debug?: boolean): Promise<string>=> {
+const sendBridgeFromEthTransaction = async (amount: Big, balance: Big, value: Big,  accEth: EthAccount, accStark: StarkNetAccount, gas: Gas, debug?: boolean): Promise<string>=> {
     const contract = new Contract(ethBridgeAddress, ethBridgeAbi, accEth.w)
 
     //@ts-ignore
     const starkPub = hexToBigInt(accStark.pub)
-
-    if (debug) {
-        console.log(`amount to bridge ${amount.div(10e17).toString()}`)
-    }
+    const maxFeePerGas = gas.price.sub(priorityFee.toString())
 
     const opt = {
         value: toBigInt(value),
         gasLimit: toBigInt(gas.limit),
-        maxFeePerGas: toBigInt(gas.price),
-        maxPriorityFeePerGas: 5e7,
+        maxFeePerGas: toBigInt(maxFeePerGas),
+        maxPriorityFeePerGas: priorityFee,
+    }
+
+    if (debug) {
+        console.log(opt)
     }
 
     const res = await contract['deposit'].send(toBigInt(amount),starkPub, opt)
@@ -163,44 +187,67 @@ const  estimateL2Gas = async (amount: Big, accStark: StarkNetAccount): Promise<G
         from_address: ethBridgeAddress,
         to_address: '0x073314940630fd6dcda0d772d4c972c4e0a9946bef9dabf4ef84eda8ef542b82',
         entry_point_selector: "handle_deposit",
-        payload: [accStark.pub, amount.toString(), '0']
+        payload: [accStark.pub, amount.round().toString(), '0']
     });
 
 
     return {
         //@ts-ignore
-        price: new Big(fee.gas_price),
+        price: new Big(fee.gas_price).round(),
         //@ts-ignore
-        total: new Big(fee.overall_fee),
+        total: new Big(fee.overall_fee).round(),
         //@ts-ignore
-        limit: new Big(fee.gas_usage)
+        limit: new Big(fee.gas_usage).round()
     };
 
 }
-
-const estimateL1Gas = async (accStark: StarkNetAccount, accEth: EthAccount, balance: Big): Promise<Gas> => {
-
-    balance = balance.div(2)
+const estimateL1Gas = async (accStark: StarkNetAccount, accEth: EthAccount, balance: Big, debug?: boolean): Promise<Gas> => {
 
     const contract = new Contract(ethBridgeAddress, ethBridgeAbi, accEth.w)
 
-    const block = await accEth.provider.getBlock('latest')
-    const fee = await accEth.provider.getFeeData()
+    let block: Block |null= null
+    let count = 0
+    for (;count < 10;) {
+        try {
+             block = await accEth.provider.getBlock('latest')
+             break
+        } catch (e) {
+            count++
+        }
+    }
+
+    if (!block) {
+        throw new Error(`block not found`)
+    }
+
+    if (debug) {
+        console.log(`block. baseFeePerGas: ${block?.baseFeePerGas} london: ${block?.isLondon()}`)
+    }
 
     let baseFee: bigint = BigInt(0)
-    if (block && block.baseFeePerGas && fee.maxPriorityFeePerGas) {
+    if (block && block.baseFeePerGas) {
         baseFee = BigInt(block.baseFeePerGas)
+        if (debug) {
+            console.log(`base fee: ${block.baseFeePerGas} wei`)
+        }
+    }
+
+    const amount = BigInt(balance.mul(0.5).round().toString())
+
+    if (debug) {
+        console.log(`estimateL1Gas amount: ${amount.toString()}`)
+        console.log(`estimateL1Gas value: ${balance.toString()}`)
     }
 
     //@ts-ignore
-    const gasLimit = await contract['deposit'].estimateGas(BigInt(balance.mul(0.5).round().toString()), hexToBigInt(accStark.pub), {
+    const gasLimit = await contract['deposit'].estimateGas(amount, hexToBigInt(accStark.pub), {
             value: BigInt(balance.round().toString()),
-            maxPriorityFeePerGas: 1e8,
+            maxPriorityFeePerGas: priorityFee,
             maxFeePerGas: baseFee,
         })
 
-    const gl  = new Big(gasLimit.toString()).mul(1.2).round()
-    const gp = new Big(baseFee.toString()).add(5e7)
+    const gl  = new Big(gasLimit.toString()).mul(1.1).round()
+    const gp = new Big(baseFee.toString()).add(priorityFee.toString()).mul(1.2)
 
     let gas: Big
     if (baseFee) {
@@ -209,14 +256,12 @@ const estimateL1Gas = async (accStark: StarkNetAccount, accEth: EthAccount, bala
         throw new Error('network fee estimation failed')
     }
 
-
     return {
         total: gas.round(),
-        limit: gl,
-        price: gp
+        limit: gl.round(),
+        price: gp.round()
     }
 }
-
 
 const bridgeToEth = async (req: LiquidityBridgeReq): Promise<DefaultRes> => {
     throw new Error('not supported yet')

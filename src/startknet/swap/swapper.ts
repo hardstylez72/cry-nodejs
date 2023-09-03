@@ -1,11 +1,12 @@
-import {SwapRequest, SwapRes} from "../halp";
+import {retryOpt, SwapRequest, SwapRes} from "../halp";
 import {DefaultRes, StarkNetAccount} from "../account/Account";
 import {Builder10kSwap} from "./10swap/builder";
 import {BuilderSith} from "./sithswap/builder";
-import {Abi} from "starknet";
+import {Abi, Call} from "starknet";
 import {BuilderJediSwap} from "./jediswap/builder";
 import {BuilderMySwap} from "./mySwap/builder";
 import {BuilderProtossSwap} from "./protossSwap/builder";
+import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
 
 
 export enum Platform {
@@ -34,6 +35,18 @@ export class Swapper {
            ])
     }
 
+    async swapEstimate(tx: Call): Promise<bigint> {
+
+        const fee = await this.acc.acc.estimateFee(tx, {blockIdentifier: 'latest' })
+            .catch((err) => {throw new Error(`swapEstimate failed ${err.message}`)})
+
+        if (!fee || !fee.suggestedMaxFee) {
+            throw new Error(`swapEstimate empty resp`)
+        }
+
+        return fee.suggestedMaxFee
+    }
+
     async swap(req: SwapRequest, platform: Platform): Promise<SwapRes> {
 
         const builder = this.platforms.get(platform)
@@ -46,10 +59,8 @@ export class Swapper {
         let result: SwapRes = {}
 
         if (req.estimateOnly) {
-            const fee = await this.acc.acc.estimateFee(cd, {blockIdentifier: 'latest' })
-                .catch((err) => {throw new Error(`estimate swap fee failed ${err.message}`)})
-
-            result.maxFee = fee.suggestedMaxFee.toString()
+            const fee = await retryAsyncDecorator(this.swapEstimate.bind(this), retryOpt)(cd)
+            result.maxFee = fee.toString()
             return result
         }
 

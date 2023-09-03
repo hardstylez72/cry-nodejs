@@ -154,7 +154,7 @@ export const WORDLIST = ["abandon","ability","able","about","above","absent","ab
     "satisfy","satoshi","sauce","sausage","save","say","scale","scan","scare","scatter",
     "scene","scheme","school","science","scissors","scorpion","scout","scrap","screen","script",
     "scrub","sea","search","season","seat","second","secret","section","security","seed",
-    "seek","segment","select","sell","seminar","senior","sense","sentence","series","service",
+    "seek","segment","select","sell","seminar","senior","sense","sentence","series","service.ts",
     "session","settle","setup","seven","shadow","shaft","shallow","share","shed","shell",
     "sheriff","shield","shift","shine","ship","shiver","shock","shoe","shoot","shop",
     "short","shoulder","shove","shrimp","shrug","shuffle","shy","sibling","sick","side",

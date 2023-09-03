@@ -5,8 +5,10 @@ import {Address, tokenMap, TokenName} from "../../tokens";
 import Big from "big.js";
 import {abi} from "./abi";
 import {slippage, useSlippage} from "../slippage";
-import {defaultDeadline, SwapRequest, SwapRes} from "../../halp";
+import {defaultDeadline, retryOpt, SwapRequest, SwapRes} from "../../halp";
 import {SwapBuilder} from "../swapper";
+import {retryAsync} from "ts-retry";
+import {retryDecorator, retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
 
 
 
@@ -47,7 +49,7 @@ export class Builder10kSwap implements SwapBuilder {
 
         const path = this.makePath(req)
 
-        const amountMin = await this.getAmountOut(req)
+        const amountMin = await retryAsyncDecorator(this.getAmountOut.bind(this), retryOpt)(req)
             .catch((err) => {throw new Error(`router.getAmountOut failed ${err.message}`)})
 
         const min = useSlippage(amountMin.toString(), req.slippage)
