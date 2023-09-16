@@ -4,8 +4,8 @@ import {StarkNetAccount} from "../../account/Account";
 import {Address, tokenMap, TokenName} from "../../tokens";
 import Big from "big.js";
 import {poolAbi, routerAbi} from "./abi";
-import {slippage, useSlippage} from "../slippage";
-import {defaultDeadline, retryOpt, SwapRequest, SwapRes} from "../../halp";
+import {rateCalc, useSlippage} from "../slippage";
+import {defaultDeadline, retryOpt, Swap, SwapRequest, SwapRes} from "../../halp";
 import {SwapBuilder} from "../swapper";
 import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
 
@@ -79,7 +79,7 @@ export class BuilderProtossSwap implements SwapBuilder {
 
         const res = await this.contract.call('getAmountOut',[uint256.bnToUint256(req.amount), reserveIn ,reserveOut ])
         //@ts-ignore
-        const result = BigInt(res.amountOut.low) * BigInt(2)
+        const result = BigInt(res.amountOut.low)
 
         if (this.debug) {
             console.log(`am in ${req.amount} of ${req.fromToken}`)
@@ -89,7 +89,7 @@ export class BuilderProtossSwap implements SwapBuilder {
         //@ts-ignore
         return BigInt(result)
     }
-     async buildCallData(req: SwapRequest): Promise<Call> {
+     async buildCallData(req: SwapRequest): Promise<Swap> {
 
         const path = this.makePath(req)
 
@@ -109,6 +109,8 @@ export class BuilderProtossSwap implements SwapBuilder {
                     deadline: defaultDeadline()
                 }
         }
-        return cd
+         const rate = rateCalc(req.fromToken, req.toToken, req.amount, amountMin.toString())
+
+         return {cd, rate: Number(rate)}
     }
 }

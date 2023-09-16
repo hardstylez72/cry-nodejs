@@ -1,6 +1,5 @@
-import {BigNumberish, uint256} from "starknet";
+import {BigNumberish, Call, uint256} from "starknet";
 import {TokenName} from "./tokens";
-import {slippage} from "./swap/slippage";
 import {RetryOptions} from "ts-retry";
 
 export const retryOpt = {maxTry: 5, delay: 1000} as RetryOptions
@@ -18,13 +17,18 @@ export type SwapRequest = {
     estimateOnly: boolean
 
     fee?: string
-    slippage: slippage
+    slippage: string
+}
+
+export type Swap = {
+    cd: Call
+    rate: number
 }
 
 export type SwapRes = {
     swapTxId?: string
-
     maxFee?: string
+    rate: number
 }
 
 export const defaultDeadline = () => {

@@ -1,8 +1,8 @@
-import {retryOpt, SwapRequest, SwapRes} from "../halp";
+import {retryOpt, Swap, SwapRequest, SwapRes} from "../halp";
 import {DefaultRes, StarkNetAccount} from "../account/Account";
 import {Builder10kSwap} from "./10swap/builder";
 import {BuilderSith} from "./sithswap/builder";
-import {Abi, Call} from "starknet";
+import {Abi, Call, CallData} from "starknet";
 import {BuilderJediSwap} from "./jediswap/builder";
 import {BuilderMySwap} from "./mySwap/builder";
 import {BuilderProtossSwap} from "./protossSwap/builder";
@@ -18,7 +18,7 @@ export enum Platform {
 }
 
 export interface SwapBuilder {
-    buildCallData(req: SwapRequest)
+    buildCallData(req: SwapRequest): Promise<Swap>
 }
 
 export class Swapper {
@@ -35,7 +35,7 @@ export class Swapper {
            ])
     }
 
-    async swapEstimate(tx: Call): Promise<bigint> {
+    async swapEstimate(tx: Call): Promise<string> {
 
         const fee = await this.acc.acc.estimateFee(tx, {blockIdentifier: 'latest' })
             .catch((err) => {throw new Error(`swapEstimate failed ${err.message}`)})
@@ -44,7 +44,7 @@ export class Swapper {
             throw new Error(`swapEstimate empty resp`)
         }
 
-        return fee.suggestedMaxFee
+        return fee.suggestedMaxFee.toString()
     }
 
     async swap(req: SwapRequest, platform: Platform): Promise<SwapRes> {
@@ -54,21 +54,34 @@ export class Swapper {
             throw new Error(`platform ${platform} is not supported`)
         }
 
-       const cd = await builder.buildCallData(req)
+       const data = await builder.buildCallData(req)
+        let result: SwapRes = {rate: data.rate}
 
-        let result: SwapRes = {}
+        if (req.estimateOnly || !req.fee) {
+            const fee = await retryAsyncDecorator(this.swapEstimate.bind(this), retryOpt)(data.cd)
+            req.fee = fee.toString()
+            result.maxFee = req.fee
 
-        if (req.estimateOnly) {
-            const fee = await retryAsyncDecorator(this.swapEstimate.bind(this), retryOpt)(cd)
-            result.maxFee = fee.toString()
-            return result
+            if (req.estimateOnly) {
+                return result
+            }
         }
 
-        const res = await this.acc.acc.execute(cd, undefined, {maxFee: req.fee})
-            .catch((err) => {throw new Error(`router.swap failed ${err.message}`)})
+        result.swapTxId = await retryAsyncDecorator(this._swap.bind(this), retryOpt)(data.cd, req.fee)
+        result.maxFee = req.fee
 
-        result.swapTxId = res.transaction_hash
 
         return result
+    }
+
+
+    private async _swap(cd: Call, fee: string): Promise<string> {
+        const res = await this.acc.acc.execute(cd, undefined, {maxFee: fee})
+            .catch((err) => {throw new Error(`router.swap failed ${err.message}`)})
+
+        if  (!res.transaction_hash) {
+            throw new Error('empty response')
+        }
+        return res.transaction_hash
     }
 }

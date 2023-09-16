@@ -2,9 +2,9 @@ import {Builder10kSwap} from "../10swap/builder";
 import {SwapBuilder} from "../swapper";
 import {StarkNetAccount} from "../../account/Account";
 import {Abi, BigNumberish, Call, Contract, num, uint256} from "starknet";
-import {defaultDeadline, retryOpt, SwapRequest} from "../../halp";
+import {defaultDeadline, retryOpt, Swap, SwapRequest} from "../../halp";
 import {Address, tokenMap, TokenName} from "../../tokens";
-import {useSlippage} from "../slippage";
+import {rateCalc, useSlippage} from "../slippage";
 import {routerAbi} from './routerAbi'
 import {Big} from 'big.js'
 import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
@@ -90,7 +90,7 @@ export class BuilderMySwap implements SwapBuilder {
         // @ts-ignore
         return BigInt(amOut.toString())
     }
-    async buildCallData(req: SwapRequest): Promise<Call> {
+    async buildCallData(req: SwapRequest): Promise<Swap> {
 
         const path = this.makePath(req)
         const pool = this.getPoolId(req.fromToken, req.toToken)
@@ -110,6 +110,9 @@ export class BuilderMySwap implements SwapBuilder {
                 amount_to_min:  uint256.bnToUint256(min),
             }
         }
-        return cd
+
+        const rate = rateCalc(req.fromToken, req.toToken, req.amount, amountMin.toString())
+
+        return {cd, rate: Number(rate)}
     }
 }

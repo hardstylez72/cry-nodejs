@@ -2,11 +2,12 @@ import {Builder10kSwap} from "../10swap/builder";
 import {SwapBuilder} from "../swapper";
 import {StarkNetAccount} from "../../account/Account";
 import {Abi, BigNumberish, Call, Contract, uint256} from "starknet";
-import {defaultDeadline, retryOpt, SwapRequest} from "../../halp";
+import {defaultDeadline, retryOpt, Swap, SwapRequest} from "../../halp";
 import {Address, tokenMap} from "../../tokens";
-import {useSlippage} from "../slippage";
+import {rateCalc, useSlippage} from "../slippage";
 import {poolAbi, routerAbi} from './routerAbi'
 import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
+import Big from "big.js";
 
 export class BuilderJediSwap implements SwapBuilder {
     protected router: string = '0x041fd22b238fa21cfcf5dd45a8548974d8263b3a531a60388411c5e230f97023'
@@ -74,7 +75,7 @@ export class BuilderJediSwap implements SwapBuilder {
         // @ts-ignore
         return BigInt(result.low)
     }
-    async buildCallData(req: SwapRequest): Promise<Call> {
+    async buildCallData(req: SwapRequest): Promise<Swap> {
 
         const path = this.makePath(req)
 
@@ -94,6 +95,9 @@ export class BuilderJediSwap implements SwapBuilder {
                 deadline: defaultDeadline()
             }
         }
-        return cd
+
+        const rate = rateCalc(req.fromToken, req.toToken, req.amount, amountMin.toString())
+
+        return {cd, rate: Number(rate)}
     }
 }

@@ -4,8 +4,8 @@ import {StarkNetAccount} from "../../account/Account";
 import {Address, tokenMap, TokenName} from "../../tokens";
 import Big from "big.js";
 import {abi} from "./abi";
-import {slippage, useSlippage} from "../slippage";
-import {defaultDeadline, retryOpt, SwapRequest, SwapRes} from "../../halp";
+import {rateCalc, useSlippage} from "../slippage";
+import {defaultDeadline, retryOpt, Swap, SwapRequest, SwapRes} from "../../halp";
 import {SwapBuilder} from "../swapper";
 import {retryAsync} from "ts-retry";
 import {retryDecorator, retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
@@ -45,7 +45,7 @@ export class Builder10kSwap implements SwapBuilder {
 
         return BigInt(res.amounts[1].low)
     }
-     async buildCallData(req: SwapRequest): Promise<Call> {
+     async buildCallData(req: SwapRequest): Promise<Swap> {
 
         const path = this.makePath(req)
 
@@ -65,6 +65,9 @@ export class Builder10kSwap implements SwapBuilder {
                     deadline: defaultDeadline()
                 }
         }
-        return cd
+
+        const rate = rateCalc(req.fromToken, req.toToken, req.amount, amountMin.toString())
+
+        return {cd: cd, rate: Number(rate)}
     }
 }
