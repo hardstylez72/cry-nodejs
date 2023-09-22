@@ -7,6 +7,7 @@ import {BuilderJediSwap} from "./jediswap/builder";
 import {BuilderMySwap} from "./mySwap/builder";
 import {BuilderProtossSwap} from "./protossSwap/builder";
 import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
+import {BuilderAvnuSwap} from "./avnu/builder";
 
 
 export enum Platform {
@@ -14,7 +15,8 @@ export enum Platform {
     SithSwap = 'SithSwap',
     JediSwap = 'JediSwap',
     MySwap = 'MySwap',
-    ProtossSwap = 'ProtossSwap'
+    ProtossSwap = 'ProtossSwap',
+    AvnuSwap = 'AvnuSwap',
 }
 
 export interface SwapBuilder {
@@ -31,7 +33,8 @@ export class Swapper {
                [Platform.SithSwap, new BuilderSith(acc)],
                [Platform.JediSwap, new BuilderJediSwap(acc)],
                [Platform.MySwap, new BuilderMySwap(acc)],
-               [Platform.ProtossSwap, new BuilderProtossSwap(acc)]
+               [Platform.ProtossSwap, new BuilderProtossSwap(acc)],
+               [Platform.AvnuSwap, new BuilderAvnuSwap(acc)]
            ])
     }
 

@@ -26,7 +26,7 @@ export interface estimateSwapRes {
 }
 
 
-type TokenName = 'ETH' | 'STG' | 'USDT' | 'USDC'
+type TokenName = 'ETH' | 'STG' | 'USDT' | 'USDC' | 'USDCBridged'
 
 
 const tokenChainKey = (token: TokenName, chain: number) => token + chain.toString()
@@ -46,9 +46,16 @@ tokenChainMap.set(tokenChainKey('USDT', ChainId.ARBITRUM_ONE), new Token(
     'USDT',
 ))
 
-tokenChainMap.set(tokenChainKey('USDC', ChainId.ARBITRUM_ONE), new Token(
+tokenChainMap.set(tokenChainKey('USDCBridged', ChainId.ARBITRUM_ONE), new Token(
     ChainId.ARBITRUM_ONE,
     '0xff970a61a04b1ca14834a43f5de4533ebddb5cc8',
+    6,
+    'USDCBridged',
+))
+
+tokenChainMap.set(tokenChainKey('USDC', ChainId.ARBITRUM_ONE), new Token(
+    ChainId.ARBITRUM_ONE,
+    '0xaf88d065e77c8cc2239327c5edb3a432268e5831',
     6,
     'USDC',
 ))
