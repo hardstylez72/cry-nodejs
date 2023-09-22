@@ -8,6 +8,7 @@ import {BuilderMySwap} from "./mySwap/builder";
 import {BuilderProtossSwap} from "./protossSwap/builder";
 import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
 import {BuilderAvnuSwap} from "./avnu/builder";
+import {FibrousSwap} from "./fibrous/builder";
 
 
 export enum Platform {
@@ -17,6 +18,7 @@ export enum Platform {
     MySwap = 'MySwap',
     ProtossSwap = 'ProtossSwap',
     AvnuSwap = 'AvnuSwap',
+    FibrousSwap = 'FibrousSwap'
 }
 
 export interface SwapBuilder {
@@ -34,14 +36,18 @@ export class Swapper {
                [Platform.JediSwap, new BuilderJediSwap(acc)],
                [Platform.MySwap, new BuilderMySwap(acc)],
                [Platform.ProtossSwap, new BuilderProtossSwap(acc)],
-               [Platform.AvnuSwap, new BuilderAvnuSwap(acc)]
+               [Platform.AvnuSwap, new BuilderAvnuSwap(acc)],
+               [Platform.FibrousSwap, new FibrousSwap(acc)],
+
            ])
     }
 
     async swapEstimate(tx: Call): Promise<string> {
 
         const fee = await this.acc.acc.estimateFee(tx, {blockIdentifier: 'latest' })
-            .catch((err) => {throw new Error(`swapEstimate failed ${err.message}`)})
+            .catch((err) => {
+                throw new Error(`swapEstimate failed ${err.message}`)
+            })
 
         if (!fee || !fee.suggestedMaxFee) {
             throw new Error(`swapEstimate empty resp`)
