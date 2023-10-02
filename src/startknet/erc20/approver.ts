@@ -39,7 +39,7 @@ export class Approver {
         const allowed = await retryAsyncDecorator(this.allowance.bind(this), retryOpt)({token: req.token, spender: req.spender, addr: this.account.pub})
 
         if (allowed.lt(new Big(req.amount))) {
-            return await retryAsyncDecorator(this.approve.bind(this), {maxTry:2})(req).catch((err => {
+            return await retryAsyncDecorator(this.approve.bind(this), {maxTry:5})(req).catch((err => {
                 throw new Error(`approve on ${req.token} failed: ${err.message}`)
             }))
         }
@@ -64,6 +64,10 @@ export class Approver {
         const maxFee = await retryAsyncDecorator(this.approveEstimate.bind(this), retryOpt)(calls)
 
         const res = await this.account.acc.execute(calls, [abi], { maxFee: maxFee,})
+
+        if (!res.transaction_hash) {
+            throw new Error('starknet in alpha stage')
+        }
 
         return {txId: res.transaction_hash}
     }

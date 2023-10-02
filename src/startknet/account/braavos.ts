@@ -17,9 +17,11 @@ import {
   ec,
   hash,
   num,
-  stark, SequencerProvider, Account, TransactionType,
+  stark, SequencerProvider, Account, TransactionType, Call,
 } from 'starknet';
 import {DefaultRes, StarkNetAccount} from "./Account";
+import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
+import {retryOpt} from "../halp";
 
 const BraavosProxyClassHash: BigNumberish =
   '0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e';
@@ -52,6 +54,38 @@ export class BraavosAccount implements StarkNetAccount {
       console.log(e)
       return false
     }
+  }
+
+  async Estimate(tx: Call, op: string): Promise<string> {
+    return retryAsyncDecorator(this.estimate.bind(this), retryOpt)(tx, op)
+  }
+
+  private async estimate(tx: Call, op: string): Promise<string> {
+
+    const fee = await this.acc.estimateFee(tx, {blockIdentifier: 'latest' })
+        .catch((err) => {
+          throw new Error(`${op} failed ${err.message}`)
+        })
+
+    if (!fee || !fee.suggestedMaxFee) {
+      throw new Error(`${op} empty resp`)
+    }
+
+    return fee.suggestedMaxFee.toString()
+  }
+
+  async Execute(cd: Call, fee: string, op: string): Promise<string> {
+    return retryAsyncDecorator(this.execute.bind(this), retryOpt)(cd, fee, op)
+  }
+
+  private async execute(cd: Call, fee: string, op: string): Promise<string> {
+    const res = await this.acc.execute(cd, undefined, {maxFee: fee})
+        .catch((err) => {throw new Error(`${op} failed ${err.message}`)})
+
+    if  (!res.transaction_hash) {
+      throw new Error(`${op} empty response`)
+    }
+    return res.transaction_hash
   }
 
   async DeployAccount(): Promise<DefaultRes> {

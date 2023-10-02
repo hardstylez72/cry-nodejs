@@ -17,17 +17,6 @@ export class Dmail {
         this.rand = new Jabber()
     }
 
-    async sendDmailEstimate(tx: Call): Promise<bigint> {
-
-        const fee = await this.acc.acc.estimateFee(tx, {blockIdentifier: 'latest' })
-            .catch((err) => {throw new Error(`sendDmailEstimate fee failed ${err.message}`)})
-
-        if (!fee || !fee.suggestedMaxFee) {
-            throw new Error(`sendDmailEstimate empty resp`)
-        }
-
-        return fee.suggestedMaxFee
-    }
     async sendDmail(req:  SendDmail): Promise<DefaultRes> {
         const tx = this.buildTx()
 
@@ -35,18 +24,16 @@ export class Dmail {
             EstimatedMaxFee: '0'
         }
 
-        const fee = await retryAsyncDecorator(this.sendDmailEstimate.bind(this), retryOpt)(tx)
-
+        const fee = await this.acc.Estimate(tx, "dmail.Send")
         result.EstimatedMaxFee = fee.toString()
+        result.ContractAddr = this.contractAddr
+
         if (req.estimateOnly) {
             return result
         }
 
-        const res = await this.acc.acc.execute(tx, undefined, {maxFee: result.EstimatedMaxFee})
+        result.TxHash = await this.acc.Execute(tx, result.EstimatedMaxFee, "dmail.Send")
             .catch((err) => {throw new Error(`sendDmail failed ${err.message}`)})
-
-        result.TxHash = res.transaction_hash
-        result.ContractAddr = this.contractAddr
 
         return result
     }

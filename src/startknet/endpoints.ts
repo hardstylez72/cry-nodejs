@@ -17,6 +17,7 @@ import {EthAccount} from "./eth/account";
 import {Dmail} from "./dmail/service";
 import {StarkNetId} from "./mint/starknetid";
 import {Transfer} from "./transfer/service";
+import {ZkLendPool} from "./pool/zklend";
 
 
 enum AccountType {
@@ -348,6 +349,53 @@ export const registerStarkNetEndpoints = (app: Express) => {
 
             res.statusCode = 200
             res.send(JSON.stringify(data))
+        } catch (err: any) {
+            console.error(err)
+            res.statusCode = 500
+            res.send(JSON.stringify({error: JSON.stringify(err.message)}))
+        }
+    })
+
+    app.post('/starknet/zklend', async (req: Request, res: Response) => {
+        console.log('/starknet/zklend')
+        try {
+
+            const b = getBase(req)
+            const Req = {
+                token: req.body.token,
+                amount: req.body.amount,
+                op: req.body.op,
+                ...b
+            }
+
+            const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
+
+            const account = resolveAccount(Req.account, Req.pk, provider)
+
+            const client = new ZkLendPool(account)
+            let data = {}
+            switch (Req.op) {
+                case 'withdraw':
+                    data = await client.withdraw({
+                        estimateOnly: Req.estimateOnly,
+                        token: Req.token,
+                        fee: Req.maxFee,
+                    })
+                    break
+                case 'deposit':
+                    data = await client.deposit({
+                        estimateOnly: Req.estimateOnly,
+                        token: Req.token,
+                        fee: Req.maxFee,
+                        amount: Req.amount,
+                    })
+                    break
+                default:
+                    throw new Error(`usupported operation: ${Req.op}`)
+            }
+
+            res.statusCode = 200
+            res.send(JSON.stringify( data))
         } catch (err: any) {
             console.error(err)
             res.statusCode = 500

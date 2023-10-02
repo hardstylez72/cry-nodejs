@@ -1,9 +1,9 @@
 
 import {SwapBuilder} from "../swapper";
 import {StarkNetAccount} from "../../account/Account";
-import {defaultDeadline, retryOpt, Swap, SwapRequest} from "../../halp";
-import {Address, tokenMap, TokenName} from "../../tokens";
-import {rateCalc, useSlippage} from "../slippage";
+import {Swap, SwapRequest} from "../../halp";
+import { tokenMap,} from "../../tokens";
+import {rateCalc} from "../slippage";
 import {fetchBuildExecuteTransaction, fetchQuotes, Quote, QuoteRequest} from "@avnu/avnu-sdk";
 
 export class BuilderAvnuSwap implements SwapBuilder {

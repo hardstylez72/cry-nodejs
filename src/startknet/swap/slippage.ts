@@ -20,8 +20,28 @@ export const useSlippage = (v: string, slippage: string): string  => {
 
 export const rateCalc = (from: TokenName, to: TokenName, amIn: string, amOut:string): number => {
 
-    const fromDec = from === 'USDC' ? 1e6 : 1e18
-    const toDec = to === 'USDC' ? 1e6 : 1e18
+
+    let fromDec = 1e18
+    let toDec = 1e18
+
+    switch (from) {
+        case 'USDC':
+            fromDec = 1e6;
+            break
+        case 'USDT':
+            fromDec = 1e6;
+            break
+    }
+
+    switch (to) {
+        case 'USDC':
+            toDec = 1e6;
+            break
+        case 'USDT':
+            toDec = 1e6;
+            break
+    }
+
 
     const amInAbs = (new Big(amIn)).div(fromDec)
     const amOutAbs = (new Big(amOut)).div(toDec)
@@ -34,5 +54,5 @@ export const rateCalc = (from: TokenName, to: TokenName, amIn: string, amOut:str
         num = 1/num
     }
 
-    return num
+    return Math.abs(num)
 }
