@@ -44,7 +44,7 @@ export class Swapper {
 
     async swapEstimate(tx: Call): Promise<string> {
 
-        const fee = await this.acc.acc.estimateFee(tx, {blockIdentifier: 'latest' })
+        const fee = await this.acc.acc.estimateFee(tx, {blockIdentifier: 'latest'})
             .catch((err) => {
                 throw new Error(`swapEstimate failed ${err.message}`)
             })

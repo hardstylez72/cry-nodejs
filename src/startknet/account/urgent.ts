@@ -1,5 +1,5 @@
 import {
-  Account, Call,
+  Account, CairoVersion, Call,
   CallData,
   ec,
   hash,
@@ -20,11 +20,11 @@ export class UrgentAccount implements StarkNetAccount {
   acc: Account
   pk: string
   pub: string
-  constructor(provider: SequencerProvider, pk: string) {
+  constructor(provider: SequencerProvider, pk: string, v: CairoVersion = '0') {
     this.provider = provider
     this.pk = pk
     this.pub = this.GetPubKey()
-    this.acc = new Account(this.provider, this.pub, this.pk);
+    this.acc = new Account(this.provider, this.pub, this.pk,v);
   }
 
   async Estimate(tx: Call, op: string): Promise<string> {

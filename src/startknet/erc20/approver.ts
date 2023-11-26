@@ -1,4 +1,4 @@
-import {Call, CallData, Contract, uint256,} from "starknet";
+import {Call, CallData, Contract, Provider, SequencerProvider, uint256,} from "starknet";
 import {tokenMap, TokenName} from "../tokens";
 import {StarkNetAccount} from "../account/Account";
 import Big from "big.js";
@@ -33,6 +33,22 @@ export class Approver {
         this.account = account
     }
 
+    static async Balance(token: TokenName, provider: SequencerProvider, pub: string): Promise<string> {
+
+        const tokenAddr = tokenMap.get(token)
+        if (!tokenAddr) {
+            throw new Error(`token: ${token} is unsupported`)
+        }
+
+        const contract = new Contract(abi, tokenAddr,  provider)
+
+        const res = await contract.call('balanceOf', [pub])
+
+        // @ts-ignore
+        const result: uint256.Uint256 = res.balance
+
+        return uint256toString(result)
+    }
 
     async Approve(req: ApproveReq): Promise<ApproveRes> {
 
@@ -61,21 +77,15 @@ export class Approver {
                 amount: uint256.bnToUint256(req.amount),
             })}
 
-        const maxFee = await retryAsyncDecorator(this.approveEstimate.bind(this), retryOpt)(calls)
+        const maxFee = await  this.account.Estimate(calls, "approve")
 
-        const res = await this.account.acc.execute(calls, [abi], { maxFee: maxFee,})
+        const res = await this.account.acc.execute(calls, [abi], { maxFee: maxFee})
 
         if (!res.transaction_hash) {
             throw new Error('starknet in alpha stage')
         }
 
         return {txId: res.transaction_hash}
-    }
-
-
-    private async approveEstimate(cd: Call): Promise<bigint> {
-        const estimate = await this.account.acc.estimateFee(cd, {blockIdentifier: 'latest'})
-        return estimate.suggestedMaxFee
     }
 
     async allowance(req: AllowedReq): Promise<Big> {
@@ -85,15 +95,12 @@ export class Approver {
             throw new Error(`token: ${req.token} is unsupported`)
         }
 
-
         const contract = new Contract(abi, tokenAddr,  this.account.provider)
 
         const res = await contract.call('allowance', [req.addr, req.spender])
 
         // @ts-ignore
         const result: uint256.Uint256 = res.remaining
-
-
 
         return new Big(uint256toString(result))
     }

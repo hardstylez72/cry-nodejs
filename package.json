@@ -24,9 +24,10 @@
     "jabber": "^1.5.3",
     "jsbi": "^4.3.0",
     "lodash.flatmap": "^4.5.0",
+    "micro-starknet": "^0.2.3",
     "pure-rand": "^6.0.2",
     "socks-proxy-agent": "^8.0.1",
-    "starknet": "^5.14.1",
+    "starknet": "5.19.5",
     "toformat": "^2.0.0",
     "ts-retry": "^4.2.1",
     "web3": "^4.0.3"

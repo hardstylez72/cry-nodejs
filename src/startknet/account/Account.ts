@@ -1,5 +1,6 @@
 import {Account, Call, Provider, SequencerProvider} from "starknet";
 import {StarkNetProvider} from "../provider";
+import {TokenName} from "../tokens";
 
 export interface DefaultRes {
     EstimatedMaxFee: string

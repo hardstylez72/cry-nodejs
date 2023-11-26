@@ -42,7 +42,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
 
             const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
 
-            const account = resolveAccount(Req.account, Req.privateKey, provider)
+            const account = await resolveAccount(Req.account, Req.privateKey, provider)
 
             const swap = new Approver(account)
             const data = await swap.Approve({
@@ -79,7 +79,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
 
             const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
 
-            const account = resolveAccount(Req.account, Req.privateKey, provider)
+            const account = await resolveAccount(Req.account, Req.privateKey, provider)
 
             const swap = new Swapper(account)
             const data = await swap.swap({
@@ -111,7 +111,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
             }
 
             const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
-            const account = resolveAccount(Req.account, Req.privateKey, provider)
+            const account = await resolveAccount(Req.account, Req.privateKey, provider)
             const data = await account.IsAccountDeployed()
 
             res.statusCode = 200
@@ -165,7 +165,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
             }
 
             const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
-            const account = resolveAccount(Req.account, Req.privateKey, provider)
+            const account = await resolveAccount(Req.account, Req.privateKey, provider)
 
             let data: any
             if (Req.estimateOnly) {
@@ -240,7 +240,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
 
             const {provider} = new StarkNetProvider(MainNet,  Req.proxy)
 
-            const account = resolveAccount(Req.account, Req.pkStark, provider)
+            const account = await resolveAccount(Req.account, Req.pkStark, provider)
 
             const providerEth = new EthProvider("https://cloudflare-eth.com", Req.proxy)
             const accountEth = new EthAccount(providerEth, Req.pkEth)
@@ -282,7 +282,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
 
             const {provider} = new StarkNetProvider(MainNet,  Req.proxy)
 
-            const account = resolveAccount(Req.account, Req.pk, provider)
+            const account = await resolveAccount(Req.account, Req.pk, provider)
 
             const dmail = new Dmail(account)
 
@@ -312,7 +312,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
 
             const {provider} = new StarkNetProvider(MainNet,  Req.proxy)
 
-            const account = resolveAccount(Req.account, Req.pk, provider)
+            const account = await resolveAccount(Req.account, Req.pk, provider)
 
             const dmail = new StarkNetId(account)
 
@@ -342,7 +342,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
             }
 
             const {provider} = new StarkNetProvider(MainNet,  b.proxy)
-            const account = resolveAccount(b.account, b.pk, provider)
+            const account =await resolveAccount(b.account, b.pk, provider)
 
             const client = new Transfer(account)
             const data = await client.transfer(Req)
@@ -370,7 +370,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
 
             const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
 
-            const account = resolveAccount(Req.account, Req.pk, provider)
+            const account = await resolveAccount(Req.account, Req.pk, provider)
 
             const client = new ZkLendPool(account)
             let data = {}
@@ -392,6 +392,26 @@ export const registerStarkNetEndpoints = (app: Express) => {
                     break
                 default:
                     throw new Error(`usupported operation: ${Req.op}`)
+            }
+
+            res.statusCode = 200
+            res.send(JSON.stringify( data))
+        } catch (err: any) {
+            console.error(err)
+            res.statusCode = 500
+            res.send(JSON.stringify({error: JSON.stringify(err.message)}))
+        }
+    })
+    app.post('/starknet/balance', async (req: Request, res: Response) => {
+        console.log('/starknet/balance')
+        try {
+
+
+            const tokenName =  req.body.token
+            const {provider} = new StarkNetProvider(req.body.chainRPC, req.body.proxy)
+            const am = await Approver.Balance(tokenName, provider, req.body.pub)
+            const data = {
+                wei: am,
             }
 
             res.statusCode = 200
@@ -449,16 +469,31 @@ export const  getPrivateKeyFromMnemonicBraaaaaavaaaaaasStarkNet = (mnemonic: str
 };
 
 
-const resolveAccount = (accType: AccountType, pk: string, provider: SequencerProvider,) => {
+const resolveAccount = async (accType: AccountType, pk: string, provider: SequencerProvider,) => {
 
     let account: StarkNetAccount
     switch (accType) {
-        case AccountType.Braavos:
+        case AccountType.Braavos:{
             account =  new BraavosAccount(provider, pk)
+            const cli = new Dmail(account)
+            try {
+                await cli.sendDmail({estimateOnly:true})
+            } catch (e) {
+                account = new BraavosAccount(provider, pk, '1')
+            }
             break
-        case AccountType.UrgentX:
-            account=   new UrgentAccount(provider, pk)
+        }
+        case AccountType.UrgentX: {
+            account = new UrgentAccount(provider, pk)
+            const cli = new Dmail(account)
+            try {
+                await cli.sendDmail({estimateOnly:true})
+            } catch (e) {
+                account = new UrgentAccount(provider, pk, '1')
+            }
             break
+        }
+
         default:
             throw new Error(`invalid account type: ${accType}`)
     }
