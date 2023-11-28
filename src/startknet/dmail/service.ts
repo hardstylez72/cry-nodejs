@@ -31,7 +31,6 @@ export class Dmail {
         }
 
         result.TxHash = await this.acc.Execute(tx, result.EstimatedMaxFee, "dmail.Send")
-            .catch((err) => {throw new Error(`sendDmail failed ${err.message}`)})
 
         return result
     }

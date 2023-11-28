@@ -22,6 +22,7 @@ import {
 import {DefaultRes, StarkNetAccount} from "./Account";
 import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
 import {retryOpt} from "../halp";
+import {StarkNetProvider} from "../provider";
 
 const BraavosProxyClassHash: BigNumberish =
   '0x03131fa018d520a037686ce3efddeab8f28895662f019ca3ca18a626650f7d1e';
@@ -37,11 +38,13 @@ export class BraavosAccount implements StarkNetAccount {
   acc: Account
   pk: string
   pub: string
-  constructor(provider: SequencerProvider, pk: string, v: CairoVersion = '0') {
-    this.provider = provider
+  proxy?: string
+  constructor(provider: StarkNetProvider, pk: string, v: CairoVersion = '0') {
+    this.provider = provider.provider
     this.pk = pk
     this.pub = this.GetPubKey()
     this.acc = new Account(this.provider, this.pub, this.pk, v);
+    this.proxy = provider.proxy
   }
 
   async IsAccountDeployed(): Promise<boolean> {

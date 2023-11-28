@@ -9,6 +9,7 @@ import {
 import {DefaultRes, StarkNetAccount} from "./Account";
 import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
 import {retryOpt} from "../halp";
+import {StarkNetProvider} from "../provider";
 
 const  argentProxyClassHash = "0x25ec026985a3bf9d0cc1fe17326b245dfdc3ff89b8fde106542a3ea56c5a918";
 const  accountClassHash = "0x033434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20ee482f044dabe2";
@@ -20,11 +21,13 @@ export class UrgentAccount implements StarkNetAccount {
   acc: Account
   pk: string
   pub: string
-  constructor(provider: SequencerProvider, pk: string, v: CairoVersion = '0') {
-    this.provider = provider
+  proxy?: string
+  constructor(provider: StarkNetProvider, pk: string, v: CairoVersion = '0') {
+    this.provider = provider.provider
     this.pk = pk
     this.pub = this.GetPubKey()
     this.acc = new Account(this.provider, this.pub, this.pk,v);
+    this.proxy = provider.proxy
   }
 
   async Estimate(tx: Call, op: string): Promise<string> {

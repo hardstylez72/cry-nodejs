@@ -1,32 +1,12 @@
 {
-  "compileOnSave": true,
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "**/*.spec.ts",
-    "**/*.d.ts"
-  ],
   "compilerOptions": {
-    "checkJs": true,
-    "sourceMap": true,
-    "outDir": "dist",
-    "baseUrl": "./",
-    "declaration": false,
-    "experimentalDecorators": true,
-    "rootDir": "./",
-    "strict": true,
-    "noImplicitAny": false,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "strictPropertyInitialization": true,
-    "noImplicitThis": true,
-    "alwaysStrict": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "moduleResolution": "node16",
-    "allowJs": true,
-    "esModuleInterop": true
-  },
+    "target": "es2016",
+    "module": "commonjs",
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": false,
+    "skipLibCheck": true
+  }
 }

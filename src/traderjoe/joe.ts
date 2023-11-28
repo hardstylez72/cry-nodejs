@@ -100,12 +100,14 @@ export const getSwapData = async (req:estimateSwapReq): Promise<estimateSwapRes>
   const allRoutes = RouteV2.createAllRoutes(allPairs, fromToken, toToken) // console.debug('allRoutes', allRoutes)
 
   const am = new TokenAmount(fromToken, req.amount)
+
   const trades = await TradeV2.getTradesExactIn(
     allRoutes,
     am,
     toToken,
       req.fromToken === 'ETH',
     req.toToken === 'ETH',
+      // @ts-ignore
     client,
     chainId
   )
@@ -146,7 +148,7 @@ export const getSwapData = async (req:estimateSwapReq): Promise<estimateSwapRes>
   })
 
   return {
-    contractAddr: LB_ROUTER_V21_ADDRESS[chainId],
+    contractAddr: LB_ROUTER_V21_ADDRESS[chainId].toString(),
     value: res.value,
     data: data,
   }

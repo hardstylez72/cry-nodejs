@@ -2,7 +2,7 @@ import {BigNumberish, Call, uint256} from "starknet";
 import {TokenName} from "./tokens";
 import {RetryOptions} from "ts-retry";
 
-export const retryOpt = {maxTry: 5, delay: 1000} as RetryOptions
+export const retryOpt = {maxTry: 1, delay: 100} as RetryOptions
 export const uint256toString = (v: uint256.Uint256): string => {
     return v.low.toString()
 }
@@ -21,7 +21,7 @@ export type SwapRequest = {
 }
 
 export type Swap = {
-    cd: Call
+    cd: Call | Call[]
     rate: number
 }
 

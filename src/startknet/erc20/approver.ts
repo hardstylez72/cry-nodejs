@@ -2,7 +2,7 @@ import {Call, CallData, Contract, Provider, SequencerProvider, uint256,} from "s
 import {tokenMap, TokenName} from "../tokens";
 import {StarkNetAccount} from "../account/Account";
 import Big from "big.js";
-import {abi} from "./abi";
+import {ERC20_ABI as abi} from "./abi";
 import {retryOpt, uint256toString} from "../halp";
 import {retryAsyncDecorator, retryDecorator} from "ts-retry/lib/cjs/retry/utils";
 

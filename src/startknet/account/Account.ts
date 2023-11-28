@@ -24,4 +24,6 @@ export  interface StarkNetAccount {
      provider: SequencerProvider
      acc: Account
      pub: string
+
+    proxy?: string
 }

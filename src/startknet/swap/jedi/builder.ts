@@ -1,4 +1,4 @@
-import {Builder10kSwap} from "../10swap/builder";
+import {Builder10kSwap} from "../10k/builder";
 import {SwapBuilder} from "../swapper";
 import {StarkNetAccount} from "../../account/Account";
 import {Abi, BigNumberish, Call, Contract, uint256} from "starknet";

@@ -5,7 +5,6 @@ import {Approver} from "./erc20/approver";
 import {Swapper} from "./swap/swapper";
 import {StarkNetAccount} from "./account/Account";
 import {BraavosAccount, getBraavosPub} from "./account/braavos";
-import {SequencerProvider} from "starknet";
 import * as bip39 from "@scure/bip39";
 import {WORDLIST} from "../mnemonic/words";
 import * as bip32 from "@scure/bip32";
@@ -40,7 +39,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 account: req.body.account
             }
 
-            const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
+            const provider = new StarkNetProvider(Req.rpc,  Req.proxy)
 
             const account = await resolveAccount(Req.account, Req.privateKey, provider)
 
@@ -77,7 +76,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 account: req.body.account
             }
 
-            const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
+            const provider = new StarkNetProvider(Req.rpc,  Req.proxy)
 
             const account = await resolveAccount(Req.account, Req.privateKey, provider)
 
@@ -110,7 +109,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 account: req.body.account
             }
 
-            const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
+            const provider = new StarkNetProvider(Req.rpc,  Req.proxy)
             const account = await resolveAccount(Req.account, Req.privateKey, provider)
             const data = await account.IsAccountDeployed()
 
@@ -164,7 +163,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 account: req.body.account
             }
 
-            const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
+            const provider = new StarkNetProvider(Req.rpc,  Req.proxy)
             const account = await resolveAccount(Req.account, Req.privateKey, provider)
 
             let data: any
@@ -238,7 +237,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 toNetwork: req.body.toNetwork,
             }
 
-            const {provider} = new StarkNetProvider(MainNet,  Req.proxy)
+            const provider = new StarkNetProvider(MainNet,  Req.proxy)
 
             const account = await resolveAccount(Req.account, Req.pkStark, provider)
 
@@ -280,7 +279,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 rpc: req.body.chainRPC,
             }
 
-            const {provider} = new StarkNetProvider(MainNet,  Req.proxy)
+            const provider = new StarkNetProvider(MainNet,  Req.proxy)
 
             const account = await resolveAccount(Req.account, Req.pk, provider)
 
@@ -310,7 +309,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 rpc: req.body.chainRPC,
             }
 
-            const {provider} = new StarkNetProvider(MainNet,  Req.proxy)
+            const provider = new StarkNetProvider(MainNet,  Req.proxy)
 
             const account = await resolveAccount(Req.account, Req.pk, provider)
 
@@ -341,7 +340,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 ...b
             }
 
-            const {provider} = new StarkNetProvider(MainNet,  b.proxy)
+            const provider = new StarkNetProvider(MainNet,  b.proxy)
             const account =await resolveAccount(b.account, b.pk, provider)
 
             const client = new Transfer(account)
@@ -368,7 +367,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 ...b
             }
 
-            const {provider} = new StarkNetProvider(Req.rpc,  Req.proxy)
+            const provider = new StarkNetProvider(Req.rpc,  Req.proxy)
 
             const account = await resolveAccount(Req.account, Req.pk, provider)
 
@@ -469,7 +468,7 @@ export const  getPrivateKeyFromMnemonicBraaaaaavaaaaaasStarkNet = (mnemonic: str
 };
 
 
-const resolveAccount = async (accType: AccountType, pk: string, provider: SequencerProvider,) => {
+const resolveAccount = async (accType: AccountType, pk: string, provider: StarkNetProvider,) => {
 
     let account: StarkNetAccount
     switch (accType) {

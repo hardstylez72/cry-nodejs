@@ -1,14 +1,15 @@
 import {retryOpt, Swap, SwapRequest, SwapRes} from "../halp";
 import {DefaultRes, StarkNetAccount} from "../account/Account";
-import {Builder10kSwap} from "./10swap/builder";
-import {BuilderSith} from "./sithswap/builder";
+import {Builder10kSwap} from "./10k/builder";
+import {BuilderSith} from "./sith/builder";
 import {Abi, Call, CallData} from "starknet";
-import {BuilderJediSwap} from "./jediswap/builder";
+import {BuilderJediSwap} from "./jedi/builder";
 import {BuilderMySwap} from "./mySwap/builder";
-import {BuilderProtossSwap} from "./protossSwap/builder";
+import {BuilderProtossSwap} from "./protoss/builder";
 import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
 import {BuilderAvnuSwap} from "./avnu/builder";
 import {FibrousSwap} from "./fibrous/builder";
+import {EkuboSwap} from "./ekubo/builder";
 
 
 export enum Platform {
@@ -18,7 +19,8 @@ export enum Platform {
     MySwap = 'MySwap',
     ProtossSwap = 'ProtossSwap',
     AvnuSwap = 'AvnuSwap',
-    FibrousSwap = 'FibrousSwap'
+    FibrousSwap = 'FibrousSwap',
+    EkuboSwap = 'EkuboSwap'
 }
 
 export interface SwapBuilder {
@@ -38,6 +40,8 @@ export class Swapper {
                [Platform.ProtossSwap, new BuilderProtossSwap(acc)],
                [Platform.AvnuSwap, new BuilderAvnuSwap(acc)],
                [Platform.FibrousSwap, new FibrousSwap(acc)],
+               [Platform.EkuboSwap, new EkuboSwap(acc)],
+
 
            ])
     }

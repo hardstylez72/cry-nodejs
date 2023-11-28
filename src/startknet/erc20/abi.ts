@@ -1,4 +1,4 @@
-export const abi = [
+export const ERC20_ABI = [
     {
         "name": "Uint256",
         "size": 2,
