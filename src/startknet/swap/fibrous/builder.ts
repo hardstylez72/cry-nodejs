@@ -1,6 +1,6 @@
 import {SwapBuilder} from "../swapper";
 import {StarkNetAccount} from "../../account/Account";
-import { BigNumberish, Call, Contract, uint256} from "starknet";
+import {BigNumberish, Call, CallData, Contract, uint256} from "starknet";
 import { Swap, SwapRequest} from "../../halp";
 import { tokenMap} from "../../tokens";
 import {rateCalc, useSlippage} from "../slippage";
@@ -128,7 +128,16 @@ export class FibrousSwap implements SwapBuilder {
 
         const rate = rateCalc(req.fromToken, req.toToken, req.amount, min.toString())
 
-        return {cd, rate: Number(rate)}
+        const approve = {
+            contractAddress: from,
+            entrypoint: 'approve',
+            calldata: CallData.compile({
+                spender: this.router,
+                amount: uint256.bnToUint256(req.amount),
+            })
+        }
+
+        return {cd: [approve, cd], rate: Number(rate)}
     }
 }
 

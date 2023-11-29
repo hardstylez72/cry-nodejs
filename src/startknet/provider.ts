@@ -1,4 +1,4 @@
-import {buildUrl, num, SequencerHttpMethod, SequencerProvider} from "starknet";
+import {buildUrl, num, SequencerHttpMethod, SequencerProvider,Contract} from "starknet";
 import axios, {AxiosInstance, CreateAxiosDefaults} from "axios";
 import {SocksProxyAgent} from "socks-proxy-agent";
 

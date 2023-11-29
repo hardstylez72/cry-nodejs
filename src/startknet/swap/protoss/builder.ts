@@ -111,6 +111,20 @@ export class BuilderProtossSwap implements SwapBuilder {
         }
          const rate = rateCalc(req.fromToken, req.toToken, req.amount, amountMin.toString())
 
-         return {cd, rate: Number(rate)}
+         const  from = tokenMap.get(req.fromToken)
+         if (!from) {
+             throw new Error(`token: ${req.fromToken} is unsupported`)
+         }
+
+         const approve = {
+             contractAddress: from,
+             entrypoint: 'approve',
+             calldata: CallData.compile({
+                 spender: this.router,
+                 amount: uint256.bnToUint256(req.amount),
+             })
+         }
+
+         return {cd: [approve, cd], rate: Number(rate)}
     }
 }

@@ -17,6 +17,7 @@ import {Dmail} from "./dmail/service";
 import {StarkNetId} from "./mint/starknetid";
 import {Transfer} from "./transfer/service";
 import {ZkLendPool} from "./pool/zklend";
+import {NostraPool} from "./pool/nostra";
 
 
 enum AccountType {
@@ -372,6 +373,52 @@ export const registerStarkNetEndpoints = (app: Express) => {
             const account = await resolveAccount(Req.account, Req.pk, provider)
 
             const client = new ZkLendPool(account)
+            let data = {}
+            switch (Req.op) {
+                case 'withdraw':
+                    data = await client.withdraw({
+                        estimateOnly: Req.estimateOnly,
+                        token: Req.token,
+                        fee: Req.maxFee,
+                    })
+                    break
+                case 'deposit':
+                    data = await client.deposit({
+                        estimateOnly: Req.estimateOnly,
+                        token: Req.token,
+                        fee: Req.maxFee,
+                        amount: Req.amount,
+                    })
+                    break
+                default:
+                    throw new Error(`usupported operation: ${Req.op}`)
+            }
+
+            res.statusCode = 200
+            res.send(JSON.stringify( data))
+        } catch (err: any) {
+            console.error(err)
+            res.statusCode = 500
+            res.send(JSON.stringify({error: JSON.stringify(err.message)}))
+        }
+    })
+    app.post('/starknet/nostra', async (req: Request, res: Response) => {
+        console.log('/starknet/nostra')
+        try {
+
+            const b = getBase(req)
+            const Req = {
+                token: req.body.token,
+                amount: req.body.amount,
+                op: req.body.op,
+                ...b
+            }
+
+            const provider = new StarkNetProvider(Req.rpc,  Req.proxy)
+
+            const account = await resolveAccount(Req.account, Req.pk, provider)
+
+            const client = new NostraPool(account)
             let data = {}
             switch (Req.op) {
                 case 'withdraw':

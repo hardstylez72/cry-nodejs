@@ -59,11 +59,11 @@ export class BraavosAccount implements StarkNetAccount {
     }
   }
 
-  async Estimate(tx: Call, op: string): Promise<string> {
+  async Estimate(tx: Call | Call[], op: string): Promise<string> {
     return retryAsyncDecorator(this.estimate.bind(this), retryOpt)(tx, op)
   }
 
-  private async estimate(tx: Call, op: string): Promise<string> {
+  private async estimate(tx: Call| Call[], op: string): Promise<string> {
 
     const fee = await this.acc.estimateFee(tx, {blockIdentifier: 'latest' })
         .catch((err) => {
@@ -77,13 +77,12 @@ export class BraavosAccount implements StarkNetAccount {
     return fee.suggestedMaxFee.toString()
   }
 
-  async Execute(cd: Call, fee: string, op: string): Promise<string> {
+  async Execute(cd: Call| Call[], fee: string, op: string): Promise<string> {
     return retryAsyncDecorator(this.execute.bind(this), retryOpt)(cd, fee, op)
   }
 
-  private async execute(cd: Call, fee: string, op: string): Promise<string> {
+  private async execute(cd: Call| Call[], fee: string, op: string): Promise<string> {
     const res = await this.acc.execute(cd, undefined, {maxFee: fee})
-        .catch((err) => {throw new Error(`${op} failed ${err.message}`)})
 
     if  (!res.transaction_hash) {
       throw new Error(`${op} empty response`)

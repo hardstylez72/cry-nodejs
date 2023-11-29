@@ -18,8 +18,8 @@ export  interface StarkNetAccount {
      DeployAccountEstimate()
      GetPubKey(): string
 
-    Execute(cd: Call, fee: string, op: string): Promise<string>
-    Estimate(tx: Call, op: string): Promise<string>
+    Execute(cd: Call | Call[], fee: string, op: string): Promise<string>
+    Estimate(tx: Call | Call[], op: string): Promise<string>
 
      provider: SequencerProvider
      acc: Account

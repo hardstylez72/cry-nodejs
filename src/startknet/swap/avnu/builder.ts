@@ -5,6 +5,7 @@ import {Swap, SwapRequest} from "../../halp";
 import { tokenMap,} from "../../tokens";
 import {rateCalc} from "../slippage";
 import {fetchBuildExecuteTransaction, fetchQuotes, Quote, QuoteRequest} from "@avnu/avnu-sdk";
+import {CallData, uint256} from "starknet";
 
 export class BuilderAvnuSwap implements SwapBuilder {
 
@@ -40,7 +41,16 @@ export class BuilderAvnuSwap implements SwapBuilder {
 
         const rate = rateCalc(req.fromToken, req.toToken, req.amount, quote.buyAmount.toString())
 
-        return {cd: tx, rate: Number(rate)}
+        const approve = {
+            contractAddress: from,
+            entrypoint: 'approve',
+            calldata: CallData.compile({
+                spender: this.router,
+                amount: uint256.bnToUint256(req.amount),
+            })
+        }
+
+        return {cd: [approve, tx], rate: Number(rate)}
     }
 
     private bestQuote(quotes: Quote[]): Quote {

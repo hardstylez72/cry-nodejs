@@ -8,4 +8,4 @@ COPY package.json .
 COPY dist build
 COPY node_modules node_modules
 
-CMD [ "node", "/opt/app/build/src/index.js" ]
+CMD [ "node", "/opt/app/build/index.js" ]

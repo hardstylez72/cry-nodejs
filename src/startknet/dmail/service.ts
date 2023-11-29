@@ -1,6 +1,7 @@
 import {DefaultRes, StarkNetAccount} from "../account/Account";
-import {Call, CallData} from "starknet";
+import {Call, CallData, uint256} from "starknet";
 import Jabber  from "jabber";
+import {tokenMap} from "../tokens";
 
 
 export type SendDmail = {
@@ -34,11 +35,11 @@ export class Dmail {
 
         return result
     }
-    private buildTx(): Call {
+    private buildTx(): Call[] {
         const to = this.rand.createEmail('gmail.com')
         const theme = this.rand.createParagraph(2)
 
-        return {
+        const tx = {
             contractAddress: this.contractAddr,
             entrypoint: "transaction",
             calldata: CallData.compile({
@@ -46,5 +47,7 @@ export class Dmail {
                 theme,
             })
         }
+
+        return [tx]
     }
 }

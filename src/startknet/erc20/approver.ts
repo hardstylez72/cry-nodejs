@@ -104,4 +104,16 @@ export class Approver {
 
         return new Big(uint256toString(result))
     }
+
+    async balanceOf(tokenAddr: string): Promise<Big> {
+
+        const contract = new Contract(abi, tokenAddr,  this.account.provider)
+
+        const res = await contract.call('balanceOf', [this.account.pub])
+
+        // @ts-ignore
+        const result: uint256.Uint256 = res.balance
+
+        return new Big(uint256toString(result))
+    }
 }

@@ -6,6 +6,7 @@ import {registerTraderJoeEndpoints} from "./traderjoe/endpoints";
 
 dotenv.config();
 
+
 let app =  express();
 const port = process.env.PORT;
 app.use(bodyParser.urlencoded());
