@@ -1,6 +1,4 @@
-import {Account, Call, Provider, SequencerProvider} from "starknet";
-import {StarkNetProvider} from "../provider";
-import {TokenName} from "../tokens";
+import {Account, Call, RpcProvider} from "starknet";
 
 export interface DefaultRes {
     EstimatedMaxFee: string
@@ -21,9 +19,11 @@ export  interface StarkNetAccount {
     Execute(cd: Call | Call[], fee: string, op: string): Promise<string>
     Estimate(tx: Call | Call[], op: string): Promise<string>
 
-     provider: SequencerProvider
+     nonce(): Promise<string>
+
+     provider: RpcProvider
      acc: Account
      pub: string
 
-    proxy?: string
+     proxy?: string
 }

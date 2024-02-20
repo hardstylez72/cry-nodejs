@@ -16,7 +16,8 @@ export class NostraPool {
         [
             ['ETH', '0x07170f54dd61ae85377f75131359e3f4a12677589bb7ec5d61f362915a5c0982'],
             ['USDT', '0x06669cb476aa7e6a29c18b59b54f30b8bfcfbb8444f09e7bbb06c10895bf5d7b'],
-            ['USDC', '0x06eda767a143da12f70947192cd13ee0ccc077829002412570a88cd6539c1d85']
+            ['USDC', '0x06eda767a143da12f70947192cd13ee0ccc077829002412570a88cd6539c1d85'],
+            ['DAI', '0x02b5fd690bb9b126e3517f7abfb9db038e6a69a068303d06cf500c49c1388e20'],
         ]
     )
 

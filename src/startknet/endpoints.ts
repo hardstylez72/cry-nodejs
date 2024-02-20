@@ -1,5 +1,5 @@
 import {Express, Request, Response} from "express";
-import {MainNet, StarkNetProvider} from "./provider";
+import {StarkNetProvider} from "./provider";
 import {getUrgentPub, UrgentAccount} from "./account/urgent";
 import {Approver} from "./erc20/approver";
 import {Swapper} from "./swap/swapper";
@@ -18,6 +18,7 @@ import {StarkNetId} from "./mint/starknetid";
 import {Transfer} from "./transfer/service";
 import {ZkLendPool} from "./pool/zklend";
 import {NostraPool} from "./pool/nostra";
+import {getCairoVersion} from "./account/version";
 
 
 enum AccountType {
@@ -238,7 +239,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 toNetwork: req.body.toNetwork,
             }
 
-            const provider = new StarkNetProvider(MainNet,  Req.proxy)
+            const provider = new StarkNetProvider('',  Req.proxy)
 
             const account = await resolveAccount(Req.account, Req.pkStark, provider)
 
@@ -280,7 +281,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 rpc: req.body.chainRPC,
             }
 
-            const provider = new StarkNetProvider(MainNet,  Req.proxy)
+            const provider = new StarkNetProvider("",Req.proxy)
 
             const account = await resolveAccount(Req.account, Req.pk, provider)
 
@@ -310,7 +311,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 rpc: req.body.chainRPC,
             }
 
-            const provider = new StarkNetProvider(MainNet,  Req.proxy)
+            const provider = new StarkNetProvider("",  Req.proxy)
 
             const account = await resolveAccount(Req.account, Req.pk, provider)
 
@@ -341,7 +342,7 @@ export const registerStarkNetEndpoints = (app: Express) => {
                 ...b
             }
 
-            const provider = new StarkNetProvider(MainNet,  b.proxy)
+            const provider = new StarkNetProvider("",  b.proxy)
             const account =await resolveAccount(b.account, b.pk, provider)
 
             const client = new Transfer(account)
@@ -452,7 +453,6 @@ export const registerStarkNetEndpoints = (app: Express) => {
         console.log('/starknet/balance')
         try {
 
-
             const tokenName =  req.body.token
             const {provider} = new StarkNetProvider(req.body.chainRPC, req.body.proxy)
             const am = await Approver.Balance(tokenName, provider, req.body.pub)
@@ -462,6 +462,22 @@ export const registerStarkNetEndpoints = (app: Express) => {
 
             res.statusCode = 200
             res.send(JSON.stringify( data))
+        } catch (err: any) {
+            console.error(err)
+            res.statusCode = 500
+            res.send(JSON.stringify({error: JSON.stringify(err.message)}))
+        }
+    })
+    app.post('/starknet/cairo_version', async (req: Request, res: Response) => {
+        console.log('/starknet/cairo_version')
+        try {
+
+            const pub =  req.body.pub
+            const {provider} = new StarkNetProvider(req.body.chainRPC, req.body.proxy)
+            const v = await getCairoVersion(pub, provider)
+
+            res.statusCode = 200
+            res.send(JSON.stringify({v: v}))
         } catch (err: any) {
             console.error(err)
             res.statusCode = 500
@@ -521,21 +537,25 @@ const resolveAccount = async (accType: AccountType, pk: string, provider: StarkN
     switch (accType) {
         case AccountType.Braavos:{
             account =  new BraavosAccount(provider, pk)
-            const cli = new Dmail(account)
+            const v = await getCairoVersion(account.pub, account.provider)
             try {
-                await cli.sendDmail({estimateOnly:true})
+                await account.nonce()
             } catch (e) {
-                account = new BraavosAccount(provider, pk, '1')
+                if (e.message.indexOf('Contract not found') === -1) {
+                    account = new UrgentAccount(provider, pk, '1')
+                }
             }
             break
         }
         case AccountType.UrgentX: {
-            account = new UrgentAccount(provider, pk)
-            const cli = new Dmail(account)
+            account = new UrgentAccount(provider, pk, '0')
+            const v = await getCairoVersion(account.pub, account.provider)
             try {
-                await cli.sendDmail({estimateOnly:true})
+                await account.nonce()
             } catch (e) {
-                account = new UrgentAccount(provider, pk, '1')
+               if (e.message.indexOf('Contract not found') === -1) {
+                   account = new UrgentAccount(provider, pk, '1')
+                }
             }
             break
         }

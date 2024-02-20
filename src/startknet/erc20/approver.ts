@@ -1,4 +1,4 @@
-import {Call, CallData, Contract, Provider, SequencerProvider, uint256,} from "starknet";
+import {Call, CallData, Contract, hash, Provider, RpcProvider, uint256,} from "starknet";
 import {tokenMap, TokenName} from "../tokens";
 import {StarkNetAccount} from "../account/Account";
 import Big from "big.js";
@@ -33,7 +33,7 @@ export class Approver {
         this.account = account
     }
 
-    static async Balance(token: TokenName, provider: SequencerProvider, pub: string): Promise<string> {
+    static async Balance(token: TokenName, provider: RpcProvider, pub: string): Promise<string> {
 
         const tokenAddr = tokenMap.get(token)
         if (!tokenAddr) {
@@ -42,7 +42,7 @@ export class Approver {
 
         const contract = new Contract(abi, tokenAddr,  provider)
 
-        const res = await contract.call('balanceOf', [pub])
+        const res = await contract.call('balanceOf', CallData.compile([pub]))
 
         // @ts-ignore
         const result: uint256.Uint256 = res.balance

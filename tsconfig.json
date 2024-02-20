@@ -1,4 +1,5 @@
 {
+//  "exclude": ["node_modules"],
   "compilerOptions": {
     "target": "es2016",
     "module": "commonjs",
@@ -7,6 +8,7 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": false,
+    "allowJs": true,
     "skipLibCheck": true
   }
 }

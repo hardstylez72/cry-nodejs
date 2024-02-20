@@ -1,11 +1,13 @@
 import {
-  Account, CairoVersion, Call,
+   CairoVersion, Call,
   CallData,
   ec,
-  hash,
-  SequencerProvider,
-  TransactionType
+  hash, RpcProvider,
+  TransactionType,
+  // Account
 } from "starknet";
+
+import {Account} from '../index'
 import {DefaultRes, StarkNetAccount} from "./Account";
 import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
 import {retryOpt} from "../halp";
@@ -17,7 +19,8 @@ const  accountClassHash = "0x033434ad846cdd5f23eb73ff09fe6fddd568284a0fb7d1be20e
 export class UrgentAccount implements StarkNetAccount {
 
 
-  provider: SequencerProvider
+  provider: RpcProvider
+  //@ts-ignore
   acc: Account
   pk: string
   pub: string
@@ -26,17 +29,18 @@ export class UrgentAccount implements StarkNetAccount {
     this.provider = provider.provider
     this.pk = pk
     this.pub = this.GetPubKey()
-    this.acc = new Account(this.provider, this.pub, this.pk,v);
+    this.acc = new Account(provider.provider, this.pub, this.pk,v);
     this.proxy = provider.proxy
   }
 
   async Estimate(tx: Call, op: string): Promise<string> {
-    return retryAsyncDecorator(this.estimate.bind(this), retryOpt)(tx, op)
+    return this.estimate(tx, op)
   }
 
   private async estimate(tx: Call, op: string): Promise<string> {
 
-    const fee = await this.acc.estimateFee(tx, {blockIdentifier: 'latest' })
+    const nonce = await this.nonce()
+    const fee = await this.acc.estimateInvokeFee(tx, {blockIdentifier: 'latest' ,nonce: nonce, skipExecute: true, skipValidate: false})
         .catch((err) => {
           throw new Error(`${op} failed ${err.message}`)
         })
@@ -49,11 +53,14 @@ export class UrgentAccount implements StarkNetAccount {
   }
 
   async Execute(cd: Call, fee: string, op: string): Promise<string> {
-    return retryAsyncDecorator(this.execute.bind(this), retryOpt)(cd, fee, op)
+    return this.execute(cd, fee, op)
   }
 
   private async execute(cd: Call, fee: string, op: string): Promise<string> {
-    const res = await this.acc.execute(cd, undefined, {maxFee: fee})
+
+    const nonce = await this.nonce()
+
+    const res = await this.acc.execute(cd, undefined, {maxFee: fee, nonce: nonce})
         .catch((err) => {throw new Error(`${op} failed ${err.message}`)})
 
     if  (!res.transaction_hash) {
@@ -61,10 +68,14 @@ export class UrgentAccount implements StarkNetAccount {
     }
     return res.transaction_hash
   }
+
+  async nonce(): Promise<string> {
+    return this.provider.getNonceForAddress(this.pub, 'latest')
+  }
   async IsAccountDeployed(): Promise<boolean> {
 
     try {
-      const nonce = await this.acc.getNonce()
+      const nonce = await this.provider.getNonceForAddress(this.pub, 'latest')
 
       return nonce !== "0x0"
     } catch (e) {
@@ -82,7 +93,7 @@ export class UrgentAccount implements StarkNetAccount {
   }
   private async deployAccount(estimateOnly: boolean): Promise<DefaultRes> {
     const address =  this.pub
-    const account = new Account(this.provider, this.pub, this.pk);
+    const account = new Account(this.provider, this.pub, this.pk, 0);
     const salt = this.getSalt(this.pk)
 
     const cd = CallData.compile({
@@ -112,6 +123,7 @@ export class UrgentAccount implements StarkNetAccount {
       addressSalt: salt
     };
 
+    //@ts-ignore
     const res = await account.deployAccount(data)
 
     return {

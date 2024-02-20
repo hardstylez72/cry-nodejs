@@ -1,25 +1,29 @@
-import {buildUrl, num, SequencerHttpMethod, SequencerProvider,Contract} from "starknet";
+import {RpcProvider as MakeRPC} from "./index.js";
+import { RpcProvider, buildUrl} from "starknet";
 import axios, {AxiosInstance, CreateAxiosDefaults} from "axios";
 import {SocksProxyAgent} from "socks-proxy-agent";
 
-export const MainNet = "https://alpha-mainnet.starknet.io/"
 
 export class StarkNetProvider {
 
-    provider: SequencerProvider
+
+    provider: RpcProvider
     protected httpClient: AxiosInstance
 
     proxy?: string
-    constructor(rpc: string, proxy?: string) {
+    constructor(rpc?: string, proxy?: string) {
+
+        const node = 'https://starknet-mainnet.public.blastapi.io/rpc/'
+        const v = 'v0_6'
+        //@ts-ignore
+        this.provider =  new MakeRPC({
+            nodeUrl: node ,
+            rpcVersion: v,
+        });
 
         this.proxy = proxy
-        this.provider =  new SequencerProvider({
-            baseUrl: rpc ,
-            feederGatewayUrl: 'feeder_gateway',
-            gatewayUrl: 'gateway',
-        });
+
         let options = {
-            baseURL: rpc,
             timeout: 30000,
             withCredentials: true,
             headers: { "Content-Type": "application/json" },
@@ -37,23 +41,31 @@ export class StarkNetProvider {
 
         this.httpClient = axios.create(options)
 
-        this.provider.fetch = async (endpoint: string, options?: {
-            method?: SequencerHttpMethod;
-            body?: any;
-            parseAlwaysAsBigInt?: boolean;
-        }): Promise<any> => {
+        const fetch = async (method, params, id = 0): Promise<any> => {
 
-            const baseUrl = 'https://alpha-mainnet.starknet.io/'
-            const url = buildUrl(baseUrl, "", endpoint);
-            const method = options?.method ?? "GET";
-            const body = JSON.stringify(options?.body);
+            if (method === 'starknet_estimateFee') {
+                params.simulation_flags =[]
+            }
+
+            const rpcRequestBody = {
+                id,
+                jsonrpc: "2.0",
+                method,
+                ...params && { params }
+            };
+
+
+
+            const url = node + v
+            const body = JSON.stringify(rpcRequestBody);
 
             try {
-                const res = await this.httpClient.request({url:url, method: method, data: body})
+                const res = await this.httpClient.request({url: url, data: body, method: "post"})
                 return res.data
             } catch (e) {
                 console.error('provider.fetch error: , ', e)
             }
         }
+        this.provider.fetch = fetch
     }
 }

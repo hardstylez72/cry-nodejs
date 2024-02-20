@@ -1,6 +1,6 @@
 import {DefaultRes, StarkNetAccount} from "../account/Account";
 import {tokenMap, TokenName} from "../tokens";
-import {Call, Contract, uint256} from "starknet";
+import {Call, CallData, Contract, uint256} from "starknet";
 import axios from "axios";
 
 
@@ -89,24 +89,26 @@ export class ZkLendPool {
         return result
     }
 
-    private async buildWithdraw(req: WithdrawPoolReq): Promise<Call> {
+    private async buildWithdraw(req: WithdrawPoolReq): Promise<Call[]> {
 
         const tokenAddr = tokenMap.get(req.token)
         if (!tokenAddr) {
             throw new Error(`token: ${req.token} is unsupported`)
         }
 
-        const am = await this.userBalance(req.token)
+        // const am = await this.userBalance(req.token)
 
         const cd: Call = {
             contractAddress: this.withdrawContractAddr,
-            entrypoint: 'withdraw',
+            entrypoint: 'withdraw_all',
             calldata:{
                 token:  tokenAddr,
-                amount: am,
+                // amount: am,
             }
         }
-        return cd
+
+
+        return [cd]
     }
 
     // https://starkscan.co/tx/0x64c96e7899d9c1746769094a0e1e790b651a5ebe4abba778b990e0c95121c7c
@@ -132,7 +134,7 @@ export class ZkLendPool {
         return result
     }
 
-    private async buildDeposit(req: SupplyPoolReq): Promise<Call> {
+    private async buildDeposit(req: SupplyPoolReq): Promise<Call[]> {
 
         const tokenAddr = tokenMap.get(req.token)
         if (!tokenAddr) {
@@ -147,11 +149,17 @@ export class ZkLendPool {
                 amount: req.amount,
             }
         }
-        return cd
+        const approve = {
+            contractAddress: tokenAddr,
+            entrypoint: 'approve',
+            calldata: CallData.compile({
+                spender: this.depositContractAddr,
+                amount: uint256.bnToUint256(req.amount),
+            })
+        }
+
+        return [approve, cd]
     }
-
-
-
 }
 
 

@@ -5,8 +5,11 @@ build:
 	rm -rf build
 	mkdir build
 	cp Dockerfile build/Dockerfile
+	cp yarn.lock build/yarn.lock
 	cp deploy.sh build/deploy.sh
 	cp package.json build/package.json
 	cp -R dist build/dist
 	rm -rf dist
 	yarn --cwd ./build install --production
+
+

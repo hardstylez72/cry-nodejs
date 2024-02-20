@@ -1,6 +1,6 @@
 import {DefaultRes, StarkNetAccount} from "../account/Account";
 import {tokenMap, TokenName} from "../tokens";
-import {Account, Call, SequencerProvider, uint256} from "starknet";
+import {Call, uint256} from "starknet";
 import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
 import {retryOpt} from "../halp";
 
@@ -15,9 +15,9 @@ export type TransferReq = {
 
 export class Transfer {
 
-    acc: Account
+    acc: StarkNetAccount
     constructor(acc: StarkNetAccount) {
-        this.acc = acc.acc
+        this.acc = acc
     }
     async transfer(req: TransferReq): Promise<DefaultRes> {
 
@@ -40,19 +40,19 @@ export class Transfer {
 
     async transferEstimate(req: TransferReq): Promise<string> {
         const cd = this.buildTx(req)
-        const fee = await this.acc.estimateFee(cd)
-        if (!fee || !fee.suggestedMaxFee) {
+        const fee = await this.acc.Estimate(cd, '')
+        if (!fee) {
             throw new Error(`result is empty`)
         }
-        return fee.suggestedMaxFee.toString()
+        return fee.toString()
     }
 
     private async execute(cd: Call, fee: string): Promise<string> {
-        const tx = await this.acc.execute(cd, undefined, {maxFee: fee})
-        if (!tx || !tx.transaction_hash) {
+        const tx = await this.acc.Execute(cd, fee, "")
+        if (!tx) {
             throw new Error(`transfer empty response`)
         }
-        return tx.transaction_hash
+        return tx
     }
 
     private buildTx(req: TransferReq): Call {

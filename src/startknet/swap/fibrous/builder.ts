@@ -4,10 +4,10 @@ import {BigNumberish, Call, CallData, Contract, uint256} from "starknet";
 import { Swap, SwapRequest} from "../../halp";
 import { tokenMap} from "../../tokens";
 import {rateCalc, useSlippage} from "../slippage";
-import {routerAbi} from './routerAbi'
-import {Big} from 'big.js'
 import axios from "axios";
-import {ethers} from "ethers";
+import {Router, Router as FibrousRouter} from "./router-sdk/index";
+import { BigNumber } from "@ethersproject/bignumber";
+import {toBigInt} from "ethers";
 
 
 
@@ -20,14 +20,14 @@ interface GetRouteReq {
 export class FibrousSwap implements SwapBuilder {
 
     debug = false
-    protected router: string = '0x01b23ed400b210766111ba5b1e63e33922c6ba0c45e6ad56ce112e5f4c578e62'
+    protected router: Router
 
     protected account: StarkNetAccount
     protected routerContract: Contract
 
     constructor(account: StarkNetAccount) {
+        this.router = new FibrousRouter();
         this.account = account
-        this.routerContract = new Contract(routerAbi,this.router, this.account.acc)
     }
 
     private async getRoute(req: GetRouteReq): Promise<RouteRes> {
@@ -36,41 +36,6 @@ export class FibrousSwap implements SwapBuilder {
         return res.data
     }
 
-
-    private async getAmountOut(req: SwapRequest, poolId: number, reverse: boolean): Promise<BigNumberish> {
-
-        const poolContract = new Contract(routerAbi,this.router, this.account.acc)
-
-        const res = await poolContract.call('get_pool', [poolId])
-
-        let reserveIn:Big, reserveOut: Big
-        if (reverse) {
-            // @ts-ignore
-            reserveIn = new Big(res.pool.token_b_reserves.low)
-            // @ts-ignore
-            reserveOut = new Big(res.pool.token_a_reserves.low)
-        } else {
-            // @ts-ignore
-            reserveIn =  new Big(res.pool.token_a_reserves.low)
-            // @ts-ignore
-            reserveOut = new Big(res.pool.token_b_reserves.low)
-        }
-
-        const ratio = reserveOut.div(reserveIn)
-
-        const amOut = (ratio.mul(new Big(req.amount))).round()
-
-        if (this.debug) {
-            console.log('reserveIn ' + reserveIn.toString())
-            console.log('reserveOut ' + reserveOut.toString())
-            console.log('ratio ' + ratio.toString())
-            console.log('Token in am: ' + new Big(req.amount).toString())
-            console.log('Token out am: ' +amOut.toString())
-        }
-
-        // @ts-ignore
-        return BigInt(amOut.toString())
-    }
     async buildCallData(req: SwapRequest): Promise<Swap> {
 
         const from = tokenMap.get(req.fromToken)
@@ -84,60 +49,28 @@ export class FibrousSwap implements SwapBuilder {
         }
 
 
-        const routes = await this.getRoute({
-            amount: ethers.toBeHex(req.amount),
-            tokenInAddress: from,
-            tokenOutAddress: to,
-        })
+        const receiverAddress = this.account.pub;
 
-        if (!routes.success || routes.route.length === 0) {
-            throw new Error('route not found')
-        }
+        const slip = Number(req.slippage) / 1000
+        const approveCall:Call = await this.router.buildApprove(
+            BigNumber.from(req.amount),
+            from,
+        );
 
-        if (routes.route[0].swaps.length === 0 || routes.route[0].swaps[0].length === 0){
-            throw new Error('route not found')
-        }
+        const swapCall = await this.router.buildTransaction(
+            BigNumber.from(req.amount),
+            from,
+            to,
+            slip,
+            receiverAddress,
+        );
 
-        const swap = routes.route[0].swaps[0][0]
-        const output = routes.outputAmount
-
-        const min = useSlippage(output, req.slippage)
-
-        const cd: Call = {
-            contractAddress: this.router,
-            entrypoint: 'swap',
-            calldata:{
-                swaps: [
-                    {
-                        token_in: swap.fromTokenAddress,
-                        token_out: swap.toTokenAddress,
-                        rate: 1000000,
-                        protocol: swap.protocol,
-                        pool_address: swap.poolAddress
-                    }],
-                params:
-                    {
-                        token_in: swap.fromTokenAddress,
-                        token_out: swap.toTokenAddress,
-                        amount: uint256.bnToUint256(req.amount),
-                        min_received: uint256.bnToUint256(min),
-                        destination: this.account.pub
-                    },
-            }
-        }
+        const min = toBigInt(swapCall.calldata[4])
 
         const rate = rateCalc(req.fromToken, req.toToken, req.amount, min.toString())
 
-        const approve = {
-            contractAddress: from,
-            entrypoint: 'approve',
-            calldata: CallData.compile({
-                spender: this.router,
-                amount: uint256.bnToUint256(req.amount),
-            })
-        }
 
-        return {cd: [approve, cd], rate: Number(rate)}
+        return {cd: [approveCall, swapCall], rate: Number(rate)}
     }
 }
 

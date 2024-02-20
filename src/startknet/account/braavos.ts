@@ -11,14 +11,18 @@ import {
   DeployContractResponse,
   EstimateFeeDetails,
   InvocationsSignerDetails,
-  Provider,
   RawCalldata,
   constants,
   ec,
   hash,
   num,
-  stark, SequencerProvider, Account, TransactionType, Call,
+  stark,
+  Call,
+  RpcProvider,
 } from 'starknet';
+
+import {Account} from '../index'
+
 import {DefaultRes, StarkNetAccount} from "./Account";
 import {retryAsyncDecorator} from "ts-retry/lib/cjs/retry/utils";
 import {retryOpt} from "../halp";
@@ -33,8 +37,9 @@ const BraavosAccountClassHash = '0x2c2b8f559e1221468140ad7b2352b1a5be32660d0bf1a
 
 export class BraavosAccount implements StarkNetAccount {
 
-
-  provider: SequencerProvider
+  //@ts-ignore
+  provider: RpcProvider
+  //@ts-ignore
   acc: Account
   pk: string
   pub: string
@@ -47,10 +52,14 @@ export class BraavosAccount implements StarkNetAccount {
     this.proxy = provider.proxy
   }
 
+  async nonce(): Promise<string> {
+    return this.provider.getNonceForAddress(this.pub, 'latest')
+  }
+
   async IsAccountDeployed(): Promise<boolean> {
 
     try {
-      const nonce = await this.acc.getNonce()
+      const nonce = await this.provider.getNonceForAddress(this.pub, 'latest')
 
       return nonce !== "0x0"
     } catch (e) {
@@ -65,7 +74,9 @@ export class BraavosAccount implements StarkNetAccount {
 
   private async estimate(tx: Call| Call[], op: string): Promise<string> {
 
-    const fee = await this.acc.estimateFee(tx, {blockIdentifier: 'latest' })
+    const nonce = await this.nonce()
+
+    const fee = await this.acc.estimateFee(tx, {blockIdentifier: 'latest',  skipValidate: false, nonce})
         .catch((err) => {
           throw new Error(`${op} failed ${err.message}`)
         })
@@ -228,11 +239,12 @@ async function buildBraavosAccountDeployPayload(
 
 export async function estimateBraavosAccountDeployFee(
   privateKeyBraavos: BigNumberish,
-  provider: Provider,
+  provider,
   { blockIdentifier, skipValidate }: EstimateFeeDetails = {}
 ): Promise<BigNumberish> {
   const version = hash.feeTransactionVersion;
   const nonce = constants.ZERO;
+  //@ts-ignore
   const chainId = await provider.getChainId();
   const cairoVersion: CairoVersion = '0';
   const starkKeyPubBraavos = ec.starkCurve.getStarkKey(num.toHex(privateKeyBraavos));
@@ -271,7 +283,7 @@ export async function estimateBraavosAccountDeployFee(
 
 export async function deployBraavosAccount(
   privateKeyBraavos: BigNumberish,
-  provider: Provider,
+  provider,
   max_fee?: BigNumberish
 ): Promise<DeployContractResponse> {
   const nonce = constants.ZERO;

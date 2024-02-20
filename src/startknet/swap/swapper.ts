@@ -48,16 +48,16 @@ export class Swapper {
 
     async swapEstimate(tx: Call): Promise<string> {
 
-        const fee = await this.acc.acc.estimateFee(tx, {blockIdentifier: 'latest'})
+        const fee = await this.acc.Estimate(tx, 'swap')
             .catch((err) => {
                 throw new Error(`swapEstimate failed ${err.message}`)
             })
 
-        if (!fee || !fee.suggestedMaxFee) {
+        if (!fee ) {
             throw new Error(`swapEstimate empty resp`)
         }
 
-        return fee.suggestedMaxFee.toString()
+        return fee
     }
 
     async swap(req: SwapRequest, platform: Platform): Promise<SwapRes> {
