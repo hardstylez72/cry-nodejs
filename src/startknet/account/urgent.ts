@@ -85,57 +85,8 @@ export class UrgentAccount implements StarkNetAccount {
 
   }
 
-  async DeployAccount(): Promise<DefaultRes> {
-    return this.deployAccount( false)
-  }
-  async DeployAccountEstimate() {
-    return this.deployAccount(true)
-  }
-  private async deployAccount(estimateOnly: boolean): Promise<DefaultRes> {
-    const address =  this.pub
-    const account = new Account(this.provider, this.pub, this.pk, 0);
-    const salt = this.getSalt(this.pk)
 
-    const cd = CallData.compile({
-      implementation: accountClassHash,
-      selector: hash.getSelectorFromName("initialize"),
-      calldata: CallData.compile({signer: salt, guardian: "0"}),
-    })
 
-    const fee = await account.getSuggestedMaxFee({
-      type: TransactionType.DEPLOY_ACCOUNT,
-      payload: {
-        classHash: argentProxyClassHash,
-        constructorCalldata: cd,
-        addressSalt: salt,
-        contractAddress: address,
-      }
-    }, {})
-
-    if (estimateOnly) {
-      return {EstimatedMaxFee: fee.toString()}
-    }
-
-    const data = {
-      classHash: argentProxyClassHash,
-      constructorCalldata: cd,
-      contractAddress: address,
-      addressSalt: salt
-    };
-
-    //@ts-ignore
-    const res = await account.deployAccount(data)
-
-    return {
-      EstimatedMaxFee: fee.toString(),
-      ContractAddr: address,
-      TxHash: res.transaction_hash
-    }
-  }
-
-  private getSalt(privateKey: string) {
-   return ec.starkCurve.getStarkKey(privateKey);
-  }
   GetPubKey(): string {
     return getUrgentPub(this.pk)
   }

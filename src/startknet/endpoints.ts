@@ -153,36 +153,6 @@ export const registerStarkNetEndpoints = (app: Express) => {
             res.send(JSON.stringify({error: JSON.stringify(e)}))
         }
     })
-    app.post('/starknet/deploy_account', async (req: Request, res: Response) => {
-        console.log('/starknet/deploy_account')
-        try {
-
-            const Req = {
-                proxy: req.body.proxy,
-                rpc: req.body.chainRPC,
-                estimateOnly: req.body.estimateOnly,
-                privateKey: req.body.privateKey,
-                account: req.body.account
-            }
-
-            const provider = new StarkNetProvider(Req.rpc,  Req.proxy)
-            const account = await resolveAccount(Req.account, Req.privateKey, provider)
-
-            let data: any
-            if (Req.estimateOnly) {
-                data = await account.DeployAccountEstimate()
-            } else {
-                data = await account.DeployAccount()
-            }
-
-            res.statusCode = 200
-            res.send(JSON.stringify(data))
-        } catch (e) {
-            console.error(e)
-            res.statusCode = 500
-            res.send(JSON.stringify({error: JSON.stringify(e)}))
-        }
-    })
     app.post('/starknet/generate', async (req: Request, res: Response) => {
         console.log('/starknet/generation')
         try {

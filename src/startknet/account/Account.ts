@@ -12,8 +12,6 @@ export interface DefaultRes {
 }
 export  interface StarkNetAccount {
      IsAccountDeployed(): Promise<boolean>
-     DeployAccount(): Promise<DefaultRes>
-     DeployAccountEstimate()
      GetPubKey(): string
 
     Execute(cd: Call | Call[], fee: string, op: string): Promise<string>
